@@ -111,8 +111,6 @@ void InitializePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
 
             *pData = pFilterInfo;
             *pResult = kTriglavPlugInAPIResultSuccess;
-
-            MessageBoxA(nullptr, "Hello, World", "Hello, World", 0);
         }
     }
 }
@@ -176,6 +174,72 @@ void InitializePluginFilter(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
     }
 }
 
+void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, const TriglavPlugInServer* pPluginServer)
+{
+    const auto pRecordSuite = &(*pPluginServer).recordSuite;
+    const auto pOffscreenService = (*pPluginServer).serviceSuite.offscreenService;
+    const auto pPropertyService = (*pPluginServer).serviceSuite.propertyService;
+    const auto pPropertyService2 = (*pPluginServer).serviceSuite.propertyService2;
+    const auto pStringService = (*pPluginServer).serviceSuite.stringService;
+
+    if (TriglavPlugInGetFilterRunRecord(pRecordSuite) != nullptr && pOffscreenService != nullptr && pPropertyService != nullptr && pPropertyService2 != nullptr && pStringService != nullptr)
+    {
+        const auto hostObject = (*pPluginServer).hostObject;
+
+        TriglavPlugInPropertyObject propertyObject = nullptr;
+        TriglavPlugInFilterRunGetProperty(pRecordSuite, &propertyObject, hostObject);
+
+        TriglavPlugInOffscreenObject sourceOffscreenObject = nullptr;
+        TriglavPlugInFilterRunGetSourceOffscreen(pRecordSuite, &sourceOffscreenObject, hostObject);
+
+        TriglavPlugInOffscreenObject destinationOffscreenObject = nullptr;
+        TriglavPlugInFilterRunGetDestinationOffscreen(pRecordSuite, &destinationOffscreenObject, hostObject);
+
+        const auto pFilterInfo = static_cast<StableDiffusionPrompt*>(*pData);
+        (*pFilterInfo).pStringService = pStringService;
+        (*pFilterInfo).pPropertyService = pPropertyService;
+        (*pFilterInfo).pPropertyService2 = pPropertyService2;
+        (*pFilterInfo).format = u"";
+        (*pFilterInfo).subject = u"";
+        (*pFilterInfo).subjectCaption = u"";
+        (*pFilterInfo).servant = u"";
+        (*pFilterInfo).formatCaption = u"";
+        (*pFilterInfo).flavor = u"";
+
+        bool restart = true;
+
+        while (true)
+        {
+            if (restart)
+            {
+                restart = false;
+
+                TriglavPlugInInt result;
+                TriglavPlugInFilterRunProcess(pRecordSuite, &result, hostObject, kTriglavPlugInFilterRunProcessStateStart);
+
+                if (result == kTriglavPlugInFilterRunProcessResultExit)
+                {
+                    break;
+                }
+            }
+
+            TriglavPlugInInt result;
+            TriglavPlugInFilterRunProcess(pRecordSuite, &result, hostObject, kTriglavPlugInFilterRunProcessStateEnd);
+
+            if (result == kTriglavPlugInFilterRunProcessResultRestart)
+            {
+                restart = true;
+            }
+            else if (result == kTriglavPlugInFilterRunProcessResultExit)
+            {
+                break;
+            }
+        }
+
+        *pResult = kTriglavPlugInCallResultSuccess;
+    }
+}
+
 void TerminatePluginFilter(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, TriglavPlugInServer* pPluginServer)
 {
     *pResult = kTriglavPlugInCallResultSuccess;
@@ -202,6 +266,7 @@ void TRIGLAV_PLUGIN_API TriglavPluginCall(TriglavPlugInInt* pResult, TriglavPlug
             break;
 
         case kTriglavPlugInSelectorFilterRun:
+            RunPluginFilter(pResult, pData, pPluginServer);
             break;
 
         case kTriglavPlugInSelectorFilterTerminate:
