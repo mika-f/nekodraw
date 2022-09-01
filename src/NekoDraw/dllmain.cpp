@@ -11,8 +11,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH:
         {
-            MessageBoxA(nullptr, "", "", 0);
-
             TCHAR lpFilename[_MAX_PATH];
             GetModuleFileName(hModule, lpFilename, _MAX_PATH);
 
