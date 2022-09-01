@@ -8,9 +8,17 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
+#include <filesystem>
 #include <string>
 
-#include "framework.h"
 #include "TriglavPlugInSDK.h"
+
+#include "data.h"
+#include "framework.h"
+
+#include <pybind11/embed.h>
+#include <pybind11/eval.h>
+#include <pybind11/pybind11.h>
+
 
 #endif //PCH_H

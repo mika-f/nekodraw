@@ -1,5 +1,7 @@
 #include "pch.h"
-#include "data.h"
+#include "pluginmain.h"
+
+namespace py = pybind11;
 
 static constexpr int kItemKeyFormat = 1;
 static constexpr int kItemKeySubject = 2;
@@ -16,6 +18,19 @@ static constexpr int kStringIDSubjectCaption = 105;
 static constexpr int kStringIDServant = 106;
 static constexpr int kStringIDFormatCaption = 107;
 static constexpr int kStringIDFlavor = 108;
+
+static bool isPythonInterfaceInitialized = false;
+
+static std::string PluginRootDirectory;
+static std::string RuntimePath;
+static std::string LibraryPath;
+static std::string RootPath;
+
+void SetRootDirectory(std::string dir)
+{
+    PluginRootDirectory = dir;
+}
+
 
 void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, std::u16string* ref, const TriglavPlugInStringService* pStringService, TriglavPlugInStringObject newValueObject)
 {
@@ -82,6 +97,69 @@ static void TRIGLAV_PLUGIN_CALLBACK TriglavPlugInFilterPropertyCallBack(TriglavP
     }
 }
 
+std::string GetRuntimePath(wchar_t* runtime)
+{
+    const auto path = std::filesystem::path(runtime);
+    return (path / "python.exe").string();
+}
+
+std::string GetLibraryPath(wchar_t* runtime)
+{
+    const auto path = std::filesystem::path(runtime);
+    const auto a = (path / "python310.zip").string();
+    const auto b = (path).string();
+    const std::vector v = {a, b};
+    const auto delimiter = ";";
+
+    std::ostringstream os;
+    std::ranges::copy(v, std::ostream_iterator<std::string>(os, delimiter));
+
+    auto s = os.str();
+    s.erase(s.size() - std::char_traits<char>::length(delimiter));
+
+    return s;
+}
+
+std::string GetRootPath(wchar_t* runtime)
+{
+    return std::filesystem::path(runtime).string();
+}
+
+std::string GetPipPath()
+{
+    const auto path = std::filesystem::path(RuntimePath);
+    return (path / "get-pip.py").string();
+}
+
+wchar_t* AsWcharT(const std::string str)
+{
+    size_t chars = 0;
+    auto wcstring = new wchar_t[str.size() + 1];
+    mbstowcs_s(&chars, wcstring, str.size() + 1, str.c_str(), _TRUNCATE);
+
+    return wcstring;
+}
+
+void SetRuntimePaths()
+{
+    const auto path = std::filesystem::path(PluginRootDirectory) / "NekoDraw.ini";
+    constexpr TCHAR runtime[MAX_PATH] = {};
+    GetPrivateProfileString(
+        L"NekoDraw",
+        L"NekoDrawRuntimeUri",
+        L"",
+        LPWSTR(runtime),
+        MAX_PATH,
+        AsWcharT(path.string())
+    );
+
+
+    const auto wr = (wchar_t*)runtime;
+    RuntimePath = GetRuntimePath(wr);
+    LibraryPath = GetLibraryPath(wr);
+    RootPath = GetRootPath(wr);
+}
+
 void InitializePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, const TriglavPlugInServer* pPluginServer)
 {
     const auto pModuleInitializeRecord = (*pPluginServer).recordSuite.moduleInitializeRecord;
@@ -105,12 +183,42 @@ void InitializePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
             (*pModuleInitializeRecord).setModuleKindProc(hostObject, kTriglavPlugInModuleKindFilter);
 
             const auto pFilterInfo = new StableDiffusionPrompt;
-            pFilterInfo->pStringService = pStringService;
-            pFilterInfo->pPropertyService = (*pPluginServer).serviceSuite.propertyService;
-            pFilterInfo->pPropertyService2 = (*pPluginServer).serviceSuite.propertyService2;
-
             *pData = pFilterInfo;
-            *pResult = kTriglavPlugInAPIResultSuccess;
+
+            MessageBoxA(nullptr, "Hello, World", "Hello, World", 0);
+
+            // Initialize Python Interface
+            if (!isPythonInterfaceInitialized)
+            {
+                isPythonInterfaceInitialized = true;
+                SetRuntimePaths();
+
+                _putenv_s("PYTHONHOME", RootPath.c_str());
+                _putenv_s("PYTHONPATH", LibraryPath.c_str());
+
+
+                try
+                {
+                    py::scoped_interpreter guard{};
+
+                    try
+                    {
+                        *pResult = kTriglavPlugInAPIResultSuccess;
+                    }
+                    catch (py::error_already_set& e)
+                    {
+                        *pResult = kTriglavPlugInAPIResultFailed;
+                    }
+                }
+                catch (const std::exception e)
+                {
+                    *pResult = kTriglavPlugInAPIResultFailed;
+                }
+            }
+            else
+            {
+                *pResult = kTriglavPlugInAPIResultSuccess;
+            }
         }
     }
 }
@@ -119,6 +227,14 @@ void TerminatePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, c
 {
     const auto pFilterInfo = static_cast<StableDiffusionPrompt*>(*pData);
     delete pFilterInfo;
+
+    if (isPythonInterfaceInitialized)
+    {
+        /*
+        Py_Finalize();
+        PyMem_RawFree(program);
+        */
+    }
 
     *pResult = kTriglavPlugInAPIResultSuccess;
     *pData = nullptr;
@@ -220,6 +336,14 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                 if (result == kTriglavPlugInFilterRunProcessResultExit)
                 {
                     break;
+                }
+
+                try
+                {
+                    py::scoped_interpreter guard{};
+                }
+                catch (std::exception e)
+                {
                 }
             }
 
