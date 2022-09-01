@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "pluginmain.h"
 
-namespace py = pybind11;
+#include "stable-diffusion.h"
 
 static constexpr int kItemKeyFormat = 1;
 static constexpr int kItemKeySubject = 2;
@@ -194,17 +194,7 @@ void InitializePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
                 _putenv_s("PYTHONHOME", RootPath.c_str());
                 _putenv_s("PYTHONPATH", LibraryPath.c_str());
 
-
-                try
-                {
-                    py::scoped_interpreter guard{};
-
-                    *pResult = kTriglavPlugInAPIResultSuccess;
-                }
-                catch (const std::exception e)
-                {
-                    *pResult = kTriglavPlugInAPIResultFailed;
-                }
+                *pResult = kTriglavPlugInAPIResultSuccess;
             }
             else
             {
@@ -218,14 +208,6 @@ void TerminatePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, c
 {
     const auto pFilterInfo = static_cast<StableDiffusionPrompt*>(*pData);
     delete pFilterInfo;
-
-    if (isPythonInterfaceInitialized)
-    {
-        /*
-        Py_Finalize();
-        PyMem_RawFree(program);
-        */
-    }
 
     *pResult = kTriglavPlugInAPIResultSuccess;
     *pData = nullptr;
@@ -331,10 +313,25 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
                 try
                 {
-                    py::scoped_interpreter guard{};
+                    TriglavPlugInFilterRunSetProgressTotal(pRecordSuite, hostObject, 10);
+
+                    const auto sd = new StableDiffusion(RootPath);
+                    if (const auto isInitialized = sd->Initialize(); !isInitialized)
+                    {
+                        *pResult = kTriglavPlugInCallResultFailed;
+                        return;
+                    }
+
+                    sd->Run();
+                    sd->Dispose();
+
+                    TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, true);
                 }
-                catch (std::exception e)
+                catch (std::exception& e)
                 {
+                    MessageBoxA(nullptr, e.what(), "", 0);
+                    *pResult = kTriglavPlugInCallResultFailed;
+                    return;
                 }
             }
 

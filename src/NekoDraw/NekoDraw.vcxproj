@@ -157,6 +157,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="pluginmain.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="stable-diffusion.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -167,6 +168,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="pluginmain.cpp" />
+    <ClCompile Include="stable-diffusion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NekoDraw.rc" />
