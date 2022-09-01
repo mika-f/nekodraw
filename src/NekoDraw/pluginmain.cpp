@@ -185,8 +185,6 @@ void InitializePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
             const auto pFilterInfo = new StableDiffusionPrompt;
             *pData = pFilterInfo;
 
-            MessageBoxA(nullptr, "Hello, World", "Hello, World", 0);
-
             // Initialize Python Interface
             if (!isPythonInterfaceInitialized)
             {
@@ -201,14 +199,7 @@ void InitializePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
                 {
                     py::scoped_interpreter guard{};
 
-                    try
-                    {
-                        *pResult = kTriglavPlugInAPIResultSuccess;
-                    }
-                    catch (py::error_already_set& e)
-                    {
-                        *pResult = kTriglavPlugInAPIResultFailed;
-                    }
+                    *pResult = kTriglavPlugInAPIResultSuccess;
                 }
                 catch (const std::exception e)
                 {
