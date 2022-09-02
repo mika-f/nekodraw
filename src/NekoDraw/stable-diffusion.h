@@ -68,11 +68,9 @@ private:
     py::object numpy;
     py::object omegaconf;
     py::object os;
-    py::object pil;
     py::object pytorchlightning;
     py::object sys;
     py::object torch;
-    py::object torchvision;
     py::object random;
 
     // Python Interfaces

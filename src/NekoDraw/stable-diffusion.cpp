@@ -18,9 +18,7 @@ bool StableDiffusion::InitializeInterpreter()
         numpy = py::module::import("numpy");
         random = py::module::import("random");
         omegaconf = py::module::import("omegaconf");
-        pil = py::module::import("PIL");
         einops = py::module::import("einops");
-        torchvision = py::module::import("torchvision.utils");
         pytorchlightning = py::module::import("pytorch_lightning");
         contextlib = py::module::import("contextlib");
         ldm = py::module::import("ldm.util");
@@ -376,8 +374,6 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt, std::vector<std::vector
                             globals["x_sample"] = torch.attr("clamp")(globals["t"], "min"_a = 0.0, "max"_a = 1.0);
                             globals["t"] = einops.attr("rearrange")(globals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
                             globals["x_sample"] = eval("255.0 * t", globals);
-
-                            pil.attr("Image").attr("fromarray")(globals["x_sample"].attr("astype")(numpy.attr("uint8"))).attr("save")("C:\\Users\\natsuneko\\Downloads\\save.png");
 
                             auto samples = globals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
                             auto width = static_cast<int>(samples.size());
