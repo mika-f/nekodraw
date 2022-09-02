@@ -50,6 +50,65 @@ bool StableDiffusion::InitializeModels() const
         globals["sd"] = this->LoadModelFromConfig(globals["ckpt"]);
 
         /**
+         * li, lo = [], []
+         * for key, value in sd.items():
+         *     sp = key.split(".")
+         *     if (sp[0]) == "model":
+         *         if "input_blocks" in sp:
+         *             li.append(key)
+         *         elif "middle_block" in sp:
+         *             li.append(key)
+         *         elif "time_embed" in sp:
+         *             li.append(key)
+         *         else
+         *             lo.append(key)
+         * for key in li:
+         *     sd["model1." + key[6:]] = sd.pop(key)
+         * for key in lo:
+         *     sd["model2." + key[6:]] = sd.pop(key)
+         */
+        globals["li"] = py::list();
+        globals["lo"] = py::list();
+
+        for (auto tuple : globals["sd"].attr("items")())
+        {
+            const auto key = tuple.attr("__getitem__")(0);
+            const auto value = tuple.attr("__getitem__")(1);
+            const auto sp = split(key.cast<std::string>(), ".");
+
+            if (sp[0] == "model")
+            {
+                if (const auto isInputBlocks = std::ranges::find(sp, "input_blocks"); isInputBlocks != sp.end())
+                {
+                    globals["li"].attr("append")(key);
+                }
+                else if (const auto isMiddleBlock = std::ranges::find(sp, "middle_block"); isMiddleBlock != sp.end())
+                {
+                    globals["li"].attr("append")(key);
+                }
+                else if (const auto isTimeEmbed = std::ranges::find(sp, "time_embed"); isTimeEmbed != sp.end())
+                {
+                    globals["li"].attr("append")(key);
+                }
+                else
+                {
+                    globals["lo"].attr("append")(key);
+                }
+            }
+        }
+
+        for (auto handle : globals["li"])
+        {
+            const auto key = std::string("model1.") + handle.cast<std::string>().substr(6);
+            globals["sd"][py::str(key)] = globals["sd"].attr("pop")(handle);
+        }
+        for (auto handle : globals["lo"])
+        {
+            const auto key = std::string("model2.") + handle.cast<std::string>().substr(6);
+            globals["sd"][py::str(key)] = globals["sd"].attr("pop")(handle);
+        }
+
+        /**
          * config = OmegaConf.load(config);
          */
         globals["config"] = omegaconf.attr("OmegaConf").attr("load")(globals["config"]);
