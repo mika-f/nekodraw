@@ -3,7 +3,7 @@
 #include "strings.h"
 
 
-bool StableDiffusion::Initialize()
+bool StableDiffusion::InitializeInterpreter()
 {
     try
     {
@@ -43,14 +43,14 @@ bool StableDiffusion::Initialize()
     }
 }
 
-bool StableDiffusion::Run(StableDiffusionPrompt* prompt) const
+bool StableDiffusion::InitializeModels() const
 {
     try
     {
         /*
-         * seed_everything(seed)
-         * sd = load_model_from_config(ckpt);
-         */
+ * seed_everything(seed)
+ * sd = load_model_from_config(ckpt);
+ */
         pytorchlightning.attr("seed_everything")(globals["seed"]);
         globals["sd"] = this->LoadModelFromConfig(globals["ckpt"]);
 
@@ -109,6 +109,23 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt) const
         globals["modelCS"].attr("half")();
         globals["start_code"] = nullptr;
 
+
+        return true;
+    }
+    catch (py::error_already_set& e)
+    {
+        MessageBoxA(nullptr, e.what(), "Stable Diffusion Error :: Initialize Models", 0);
+        return false;
+    }
+}
+
+
+bool StableDiffusion::Run(StableDiffusionPrompt* prompt, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const
+{
+    bool hResult = false;
+
+    try
+    {
         /**
          * batch_size = opt.n_samples;
          * n_rows = opt.n_rows if opt.n_rows > 0 else batch_size
@@ -306,9 +323,15 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt) const
                             globals["t"] = einops.attr("rearrange")(globals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
                             globals["x_sample"] = eval("255.0 * t", globals);
 
-                            py::print(globals["x_sample"]);
+                            auto samples = globals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
+                            auto width = static_cast<int>(samples.size());
+                            auto height = static_cast<int>(samples[0].size());
 
-                            MessageBoxA(nullptr, redirect->ReadStdtOut().c_str(), "", 0);
+                            *pWidth = width;
+                            *pHeight = height;
+                            *pArray = samples;
+
+                            hResult = true;
                         }
                     }
                     catch (py::error_already_set& e)
@@ -326,14 +349,13 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt) const
 
             no_grad_scope.attr("__exit__")(nullptr, nullptr, nullptr);
         }
-
-        return true;
     }
     catch (py::error_already_set& e)
     {
         MessageBoxA(nullptr, e.what(), "Stable Diffusion Error :: Run", 0);
-        return false;
     }
+
+    return hResult;
 }
 
 py::object StableDiffusion::LoadModelFromConfig(py::object ckpt) const

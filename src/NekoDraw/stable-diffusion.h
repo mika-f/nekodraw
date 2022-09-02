@@ -103,6 +103,7 @@ public:
     }
 
     // C++ Interfaces
-    bool Initialize();
-    bool Run(StableDiffusionPrompt* prompt) const;
+    bool InitializeInterpreter();
+    bool InitializeModels() const;
+    bool Run(StableDiffusionPrompt* prompt, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const;
 };
