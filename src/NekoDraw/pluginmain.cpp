@@ -322,7 +322,7 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                         return;
                     }
 
-                    sd->Run();
+                    sd->Run(pFilterInfo);
                     sd->Dispose();
 
                     TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, true);

@@ -158,6 +158,7 @@
     <ClInclude Include="pluginmain.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stable-diffusion.h" />
+    <ClInclude Include="strings.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
