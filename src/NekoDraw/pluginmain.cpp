@@ -270,8 +270,9 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
     const auto pPropertyService = (*pPluginServer).serviceSuite.propertyService;
     const auto pPropertyService2 = (*pPluginServer).serviceSuite.propertyService2;
     const auto pStringService = (*pPluginServer).serviceSuite.stringService;
+    const auto pBitmapService = (*pPluginServer).serviceSuite.bitmapService;
 
-    if (TriglavPlugInGetFilterRunRecord(pRecordSuite) != nullptr && pOffscreenService != nullptr && pPropertyService != nullptr && pPropertyService2 != nullptr && pStringService != nullptr)
+    if (TriglavPlugInGetFilterRunRecord(pRecordSuite) != nullptr && pOffscreenService != nullptr && pPropertyService != nullptr && pPropertyService2 != nullptr && pStringService != nullptr && pBitmapService != nullptr)
     {
         const auto hostObject = (*pPluginServer).hostObject;
 
@@ -283,6 +284,34 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
         TriglavPlugInOffscreenObject destinationOffscreenObject = nullptr;
         TriglavPlugInFilterRunGetDestinationOffscreen(pRecordSuite, &destinationOffscreenObject, hostObject);
+
+        TriglavPlugInRect selectAreaRect;
+        TriglavPlugInFilterRunGetSelectAreaRect(pRecordSuite, &selectAreaRect, hostObject);
+
+        TriglavPlugInOffscreenObject selectAreaOffscreenObject = nullptr;
+        TriglavPlugInFilterRunGetSelectAreaOffscreen(pRecordSuite, &selectAreaOffscreenObject, hostObject);
+
+        TriglavPlugInInt r, g, b;
+        (*pOffscreenService).getRGBChannelIndexProc(&r, &g, &b, destinationOffscreenObject);
+
+        TriglavPlugInInt width;
+        TriglavPlugInInt height;
+
+        if (selectAreaOffscreenObject != nullptr)
+        {
+            (*pOffscreenService).getWidthProc(&width, selectAreaOffscreenObject);
+            (*pOffscreenService).getHeightProc(&height, selectAreaOffscreenObject);
+        }
+        else
+        {
+            (*pOffscreenService).getWidthProc(&width, destinationOffscreenObject);
+            (*pOffscreenService).getHeightProc(&height, destinationOffscreenObject);
+        }
+
+        TriglavPlugInBitmapObject destinationBitmapObject = nullptr;
+        (*pBitmapService).createProc(&destinationBitmapObject, width, height, 3, kTriglavPlugInBitmapScanlineHorizontalLeftTop);
+
+        TriglavPlugInFilterRunSetProgressTotal(pRecordSuite, hostObject, 100);
 
         const auto pFilterInfo = static_cast<StableDiffusionPrompt*>(*pData);
         (*pFilterInfo).pStringService = pStringService;
@@ -316,22 +345,71 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                     TriglavPlugInFilterRunSetProgressTotal(pRecordSuite, hostObject, 10);
 
                     const auto sd = new StableDiffusion(RootPath);
-                    if (const auto isInitialized = sd->Initialize(); !isInitialized)
+                    if (const auto isInitialized = sd->InitializeInterpreter(); !isInitialized)
                     {
+                        sd->Dispose();
+                        TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, true);
+
+                        *pResult = kTriglavPlugInCallResultFailed;
+                        break;
+                    }
+
+                    if (const auto isInitialized = sd->InitializeModels(); !isInitialized)
+                    {
+                        sd->Dispose();
+                        TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, true);
+
+                        *pResult = kTriglavPlugInCallResultFailed;
+                        break;
+                    }
+
+                    std::vector<std::vector<std::vector<float>>> array;
+                    int destWidth, destHeight;
+
+                    const auto isSuccess = sd->Run(pFilterInfo, &array, &destWidth, &destHeight);
+                    sd->Dispose();
+
+                    if (!isSuccess)
+                    {
+                        TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+
                         *pResult = kTriglavPlugInCallResultFailed;
                         return;
                     }
 
-                    sd->Run(pFilterInfo);
-                    sd->Dispose();
+                    TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 75);
 
-                    TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, true);
+                    for (auto i = 0; i < destWidth; i++)
+                    {
+                        for (auto j = 0; j < destHeight; j++)
+                        {
+                            TriglavPlugInPtr address;
+                            TriglavPlugInPoint point = {i, j};
+                            (*pBitmapService).getAddressProc(&address, destinationBitmapObject, &point);
+
+                            if (address != nullptr)
+                            {
+                                const auto dstAddress = static_cast<BYTE*>(address);
+                                dstAddress[r] = static_cast<BYTE>(floor(array[i][j][0]));
+                                dstAddress[g] = static_cast<BYTE>(floor(array[i][j][1]));
+                                dstAddress[b] = static_cast<BYTE>(floor(array[i][j][2]));
+                            }
+
+
+                            const auto percentage = (destWidth * i + j) / (destWidth * destHeight) * 100.0f / 4;
+                            TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, floor(75.0f + percentage));
+                        }
+                    }
+
+
+                    TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+                    *pResult = kTriglavPlugInCallResultSuccess;
                 }
                 catch (std::exception& e)
                 {
                     MessageBoxA(nullptr, e.what(), "", 0);
                     *pResult = kTriglavPlugInCallResultFailed;
-                    return;
+                    break;
                 }
             }
 
@@ -348,7 +426,20 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
             }
         }
 
-        *pResult = kTriglavPlugInCallResultSuccess;
+        TriglavPlugInPoint offscreenPos{0, 0};
+        TriglavPlugInPoint bitmapPos{0, 0};
+        (*pOffscreenService).setBitmapProc(destinationOffscreenObject, &offscreenPos, destinationBitmapObject, &bitmapPos, width, height, kTriglavPlugInOffscreenCopyModeImage);
+
+        if (selectAreaOffscreenObject == nullptr)
+        {
+            const TriglavPlugInRect rect{0, 0, width, height};
+            TriglavPlugInFilterRunUpdateDestinationOffscreenRect(pRecordSuite, hostObject, &rect);
+        }
+        else
+        {
+            TriglavPlugInFilterRunUpdateDestinationOffscreenRect(pRecordSuite, hostObject, &selectAreaRect);
+        }
+        (*pBitmapService).releaseProc(destinationBitmapObject);
     }
 }
 
