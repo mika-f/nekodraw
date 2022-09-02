@@ -384,7 +384,7 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                         for (auto j = 0; j < destHeight; j++)
                         {
                             TriglavPlugInPtr address;
-                            TriglavPlugInPoint point = {i, j};
+                            TriglavPlugInPoint point = {j, i};
                             (*pBitmapService).getAddressProc(&address, destinationBitmapObject, &point);
 
                             if (address != nullptr)
