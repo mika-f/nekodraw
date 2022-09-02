@@ -19,16 +19,11 @@ bool StableDiffusion::InitializeInterpreter()
         random = py::module::import("random");
         omegaconf = py::module::import("omegaconf");
         pil = py::module::import("PIL");
-        tqdm = py::module::import("tqdm");
-        itertools = py::module::import("itertools");
         einops = py::module::import("einops");
         torchvision = py::module::import("torchvision.utils");
-        time = py::module::import("time");
         pytorchlightning = py::module::import("pytorch_lightning");
         contextlib = py::module::import("contextlib");
         ldm = py::module::import("ldm.util");
-        transformers = py::module::import("transformers");
-        pandas = py::module::import("pandas");
 
         globals["config"] = os.attr("path").attr("join")(root, "configs", "v1-inference.yaml");
         globals["ckpt"] = os.attr("path").attr("join")(root, "models", "ldm", "stable-diffusion-v1", "sd-v1-4.ckpt");
@@ -48,9 +43,9 @@ bool StableDiffusion::InitializeModels() const
     try
     {
         /*
- * seed_everything(seed)
- * sd = load_model_from_config(ckpt);
- */
+         * seed_everything(seed)
+         * sd = load_model_from_config(ckpt);
+         */
         pytorchlightning.attr("seed_everything")(globals["seed"]);
         globals["sd"] = this->LoadModelFromConfig(globals["ckpt"]);
 
@@ -291,7 +286,7 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt, std::vector<std::vector
                          * sample_ddim = model.sample(...)
                          * modelFS.to(opt.device)
                          */
-                        globals["sample_ddim"] = globals["model"].attr("sample")(
+                        globals["samples_ddim"] = globals["model"].attr("sample")(
                             "S"_a = 50, /* opt.ddim_steps: default: 50 */
                             "conditioning"_a = globals["c"],
                             "batch_size"_a = 1,
@@ -311,17 +306,19 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt, std::vector<std::vector
                         for (auto i = 0; i < globals["batch_size"].cast<int>(); i++)
                         {
                             /**
-                            * x_sample_ddim = modelFS.decode_first_stage(samples_ddim[i].unsqueeze(0));
-                            * x_sample = torch.clamp((x_sample_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+                            * x_samples_ddim = modelFS.decode_first_stage(samples_ddim[i].unsqueeze(0));
+                            * x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                             * x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
                             * Image.fromarray(x_sample.astype(np.uint8)).save(...)
                             */
 
-                            globals["x_sample_ddim"] = globals["modelFS"].attr("decode_first_stage")(globals["sample_ddim"].attr("__getitem__")(i).attr("unsqueeze")(0));
-                            globals["t"] = eval("(x_sample_ddim + 1.0) / 2.0", globals);
+                            globals["x_samples_ddim"] = globals["modelFS"].attr("decode_first_stage")(globals["samples_ddim"].attr("__getitem__")(i).attr("unsqueeze")(0));
+                            globals["t"] = eval("(x_samples_ddim + 1.0) / 2.0", globals);
                             globals["x_sample"] = torch.attr("clamp")(globals["t"], "min"_a = 0.0, "max"_a = 1.0);
                             globals["t"] = einops.attr("rearrange")(globals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
                             globals["x_sample"] = eval("255.0 * t", globals);
+
+                            pil.attr("Image").attr("fromarray")(globals["x_sample"].attr("astype")(numpy.attr("uint8"))).attr("save")("C:\\Users\\natsuneko\\Downloads\\save.png");
 
                             auto samples = globals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
                             auto width = static_cast<int>(samples.size());
