@@ -27,6 +27,8 @@ bool StableDiffusion::InitializeInterpreter()
         globals["ckpt"] = os.attr("path").attr("join")(root, "models", "ldm", "stable-diffusion-v1", "sd-v1-4.ckpt");
         globals["seed"] = random.attr("randint")(0, 1000000);
 
+        this->isInitializeInterpreter = true;
+
         return true;
     }
     catch (py::error_already_set& e)
@@ -36,7 +38,7 @@ bool StableDiffusion::InitializeInterpreter()
     }
 }
 
-bool StableDiffusion::InitializeModels() const
+bool StableDiffusion::InitializeModels()
 {
     try
     {
@@ -161,6 +163,7 @@ bool StableDiffusion::InitializeModels() const
         globals["modelCS"].attr("half")();
         globals["start_code"] = nullptr;
 
+        this->isInitializeModels = true;
 
         return true;
     }
@@ -171,8 +174,17 @@ bool StableDiffusion::InitializeModels() const
     }
 }
 
+bool StableDiffusion::IsInterpreterInitialized() const
+{
+    return this->isInitializeInterpreter;
+}
 
-bool StableDiffusion::Run(StableDiffusionPrompt* prompt, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const
+bool StableDiffusion::IsModelsInitialized() const
+{
+    return this->isInitializeModels;
+}
+
+bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const
 {
     bool hResult = false;
 
@@ -324,7 +336,7 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt, std::vector<std::vector
                         /**
                          * shape = [opt.C, opt.H // opt.f, opt.W // opt.f];
                          */
-                        globals["shape"] = std::vector{/* opt.C*/ 4, static_cast<int>(floor(/* opt.H */ 512 / 8)), static_cast<int>(floor(/* opt.W */ 512 / 8))};
+                        globals["shape"] = std::vector{/* opt.C*/ 4, static_cast<int>(floor(/* opt.H */ height / 8)), static_cast<int>(floor(/* opt.W */ width / 8))};
 
                         /**
                          * if opt.device != "cpu":
@@ -409,6 +421,7 @@ bool StableDiffusion::Run(StableDiffusionPrompt* prompt, std::vector<std::vector
 
     return hResult;
 }
+
 
 py::object StableDiffusion::LoadModelFromConfig(py::object ckpt) const
 {

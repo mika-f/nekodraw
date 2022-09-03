@@ -2,64 +2,29 @@
 #include <utility>
 
 #include "pch.h"
+#include "PyStdOutRedirect.h"
+#include "PyStdErrRedirect.h"
 
 namespace py = pybind11;
 
 using namespace py::literals;
 
-class PyStdErrOutStreamRedirect
-{
-private:
-    // std
-    py::object _stdout;
-    py::object _stdout_buffer;
-    py::object _stderr;
-    py::object _stderr_buffer;
-
-public:
-    explicit PyStdErrOutStreamRedirect(py::module sys)
-    {
-        _stdout = sys.attr("stdout");
-        _stderr = sys.attr("stderr");
-
-        const auto stringio = py::module::import("io").attr("StringIO");
-        _stdout_buffer = stringio();
-        _stderr_buffer = stringio();
-
-        sys.attr("stdout") = _stdout_buffer;
-        sys.attr("stderr") = _stderr_buffer;
-    }
-
-    std::string ReadStdtOut()
-    {
-        _stdout_buffer.attr("seek")(0);
-        return py::str(_stdout_buffer.attr("read")());
-    }
-
-    std::string ReadStdErr()
-    {
-        _stderr_buffer.attr("seek")(0);
-        return py::str(_stderr_buffer.attr("read")());
-    }
-
-    ~PyStdErrOutStreamRedirect()
-    {
-        const auto sys = py::module::import("sys");
-        sys.attr("stdout") = _stdout;
-        sys.attr("stderr") = _stderr;
-    }
-};
+#define Pixels std::vector<std::vector<std::vector<float>>>
 
 class StableDiffusion
 {
 private:
+    // instance management
     std::string root;
+    bool isInitializeInterpreter;
+    bool isInitializeModels;
 
-    // variables
+    // scope variables
     py::object globals;
 
     // redirects
-    PyStdErrOutStreamRedirect* redirect;
+    PyStdOutRedirect* _stdout;
+    PyStdErrRedirect* _stderr;
 
     // imports
     py::object contextlib;
@@ -81,22 +46,30 @@ public:
     explicit StableDiffusion(std::string root)
     {
         this->root = std::move(root);
+        this->isInitializeInterpreter = false;
+        this->isInitializeModels = false;
 
         py::initialize_interpreter();
 
         this->globals = py::globals();
-        this->redirect = new PyStdErrOutStreamRedirect(py::module::import("sys"));
+        this->_stdout = new PyStdOutRedirect();
+        this->_stderr = new PyStdErrRedirect();
     }
 
-    void Dispose()
+    ~StableDiffusion()
     {
-        delete this->redirect;
+        delete this->_stdout;
+        delete this->_stderr;
 
         py::finalize_interpreter();
     }
 
     // C++ Interfaces
-    bool InitializeInterpreter();
-    bool InitializeModels() const;
-    bool Run(StableDiffusionPrompt* prompt, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const;
+    [[nodiscard]] bool InitializeInterpreter();
+    [[nodiscard]] bool InitializeModels();
+    [[nodiscard]] bool IsInterpreterInitialized() const;
+    [[nodiscard]] bool IsModelsInitialized() const;
+    bool RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, Pixels* pArray, int* pWidth, int* pHeight) const;
+    // bool RunImage2ImageProcessor(StableDiffusionPrompt* prompt, Pixels* array, Pixels* pArray, int* pWidth, int* pHeight) const;
+    // bool Run(StableDiffusionPrompt* prompt, Pixels* pArray, int* pWidth, int* pHeight) const;
 };

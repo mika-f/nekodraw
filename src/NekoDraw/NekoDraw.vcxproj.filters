@@ -36,6 +36,12 @@
     <ClInclude Include="strings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PyStdOutRedirect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PyStdErrRedirect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -48,6 +54,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stable-diffusion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PyStdErrRedirect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PyStdOutRedirect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

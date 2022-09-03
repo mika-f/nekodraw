@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "pluginmain.h"
-
 #include "stable-diffusion.h"
 
 static constexpr int kItemKeyFormat = 1;
@@ -26,11 +25,12 @@ static std::string RuntimePath;
 static std::string LibraryPath;
 static std::string RootPath;
 
+static StableDiffusion* spStableDiffusion;
+
 void SetRootDirectory(std::string dir)
 {
     PluginRootDirectory = dir;
 }
-
 
 void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, std::u16string* ref, const TriglavPlugInStringService* pStringService, TriglavPlugInStringObject newValueObject)
 {
@@ -344,31 +344,35 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                 {
                     TriglavPlugInFilterRunSetProgressTotal(pRecordSuite, hostObject, 10);
 
-                    const auto sd = new StableDiffusion(RootPath);
-                    if (const auto isInitialized = sd->InitializeInterpreter(); !isInitialized)
+                    if (spStableDiffusion == nullptr)
                     {
-                        sd->Dispose();
-                        TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, true);
-
-                        *pResult = kTriglavPlugInCallResultFailed;
-                        break;
+                        spStableDiffusion = new StableDiffusion(RootPath);
                     }
 
-                    if (const auto isInitialized = sd->InitializeModels(); !isInitialized)
+                    if (!spStableDiffusion->IsInterpreterInitialized())
                     {
-                        sd->Dispose();
-                        TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, true);
+                        if (const auto isInitialized = spStableDiffusion->InitializeInterpreter(); !isInitialized)
+                        {
+                            TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+                            *pResult = kTriglavPlugInCallResultFailed;
+                            break;
+                        }
+                    }
 
-                        *pResult = kTriglavPlugInCallResultFailed;
-                        break;
+                    if (!spStableDiffusion->IsModelsInitialized())
+                    {
+                        if (const auto isInitialized = spStableDiffusion->InitializeModels(); !isInitialized)
+                        {
+                            TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+                            *pResult = kTriglavPlugInCallResultFailed;
+                            break;
+                        }
                     }
 
                     std::vector<std::vector<std::vector<float>>> array;
                     int destWidth, destHeight;
 
-                    const auto isSuccess = sd->Run(pFilterInfo, &array, &destWidth, &destHeight);
-                    sd->Dispose();
-
+                    const auto isSuccess = spStableDiffusion->RunText2ImageProcessor(pFilterInfo, width, height, &array, &destWidth, &destHeight);
                     if (!isSuccess)
                     {
                         TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
@@ -426,19 +430,24 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
             }
         }
 
-        TriglavPlugInPoint offscreenPos{0, 0};
-        TriglavPlugInPoint bitmapPos{0, 0};
-        (*pOffscreenService).setBitmapProc(destinationOffscreenObject, &offscreenPos, destinationBitmapObject, &bitmapPos, width, height, kTriglavPlugInOffscreenCopyModeImage);
 
-        if (selectAreaOffscreenObject == nullptr)
+        if (*pResult == kTriglavPlugInCallResultSuccess)
         {
-            const TriglavPlugInRect rect{0, 0, width, height};
-            TriglavPlugInFilterRunUpdateDestinationOffscreenRect(pRecordSuite, hostObject, &rect);
+            TriglavPlugInPoint offscreenPos{0, 0};
+            TriglavPlugInPoint bitmapPos{0, 0};
+            (*pOffscreenService).setBitmapProc(destinationOffscreenObject, &offscreenPos, destinationBitmapObject, &bitmapPos, width, height, kTriglavPlugInOffscreenCopyModeImage);
+
+            if (selectAreaOffscreenObject == nullptr)
+            {
+                const TriglavPlugInRect rect{0, 0, width, height};
+                TriglavPlugInFilterRunUpdateDestinationOffscreenRect(pRecordSuite, hostObject, &rect);
+            }
+            else
+            {
+                TriglavPlugInFilterRunUpdateDestinationOffscreenRect(pRecordSuite, hostObject, &selectAreaRect);
+            }
         }
-        else
-        {
-            TriglavPlugInFilterRunUpdateDestinationOffscreenRect(pRecordSuite, hostObject, &selectAreaRect);
-        }
+
         (*pBitmapService).releaseProc(destinationBitmapObject);
     }
 }
