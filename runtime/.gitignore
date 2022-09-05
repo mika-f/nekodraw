@@ -1,1 +1,3 @@
-/NekoDraw/
+/NekoDraw/*
+!/NekoDraw/python310._pth
+!/NekoDraw/runtime.pth
