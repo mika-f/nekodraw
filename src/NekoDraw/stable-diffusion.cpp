@@ -466,9 +466,9 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
                 const auto g = line[j][1];
                 const auto b = line[j][2];
 
-                globals["image"].attr("__getitem__")(std::vector{i, j, 0}) = py::float_(r);
-                globals["image"].attr("__getitem__")(std::vector{i, j, 1}) = py::float_(g);
-                globals["image"].attr("__getitem__")(std::vector{i, j, 2}) = py::float_(b);
+                globals["image"].attr("__setitem__")(std::vector{i, j, 0}, py::float_(r));
+                globals["image"].attr("__setitem__")(std::vector{i, j, 1}, py::float_(g));
+                globals["image"].attr("__setitem__")(std::vector{i, j, 2}, py::float_(b));
             }
         }
 
@@ -724,7 +724,6 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
                             *pWidth = width;
                             *pHeight = height;
                             *pArray = samples;
-
                             hResult = true;
                         }
                     }
