@@ -11,7 +11,7 @@ Stable Diffusion の txt2img, img2img プロセッサを実行する CLIP STUDIO
 ## 動画
 
 - Text to Image : https://twitter.com/6jz/status/1566052868016054272
-- Image to Image : TODO
+- Image to Image : https://twitter.com/6jz/status/1566812883433902080
 
 ## 必須事項
 
