@@ -446,13 +446,20 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
                         std::vector<std::vector<std::vector<float>>> pixels;
 
-                        (*pOffscreenService).getBitmapProc(sourceBitmapObject, &bitmapSourcePoint, selectAreaOffscreenObject, &offScreenSourcePoint, width, height, kTriglavPlugInOffscreenCopyModeImage);
+                        if (selectAreaOffscreenObject != nullptr)
+                        {
+                            (*pOffscreenService).getBitmapProc(sourceBitmapObject, &bitmapSourcePoint, selectAreaOffscreenObject, &offScreenSourcePoint, width, height, kTriglavPlugInOffscreenCopyModeImage);
+                        }
+                        else
+                        {
+                            (*pOffscreenService).getBitmapProc(sourceBitmapObject, &bitmapSourcePoint, sourceOffscreenObject, &offScreenSourcePoint, width, height, kTriglavPlugInOffscreenCopyModeImage);
+                        }
 
-                        for (auto i = 0; i < width; i++)
+                        for (auto i = 0; i < height; i++)
                         {
                             std::vector<std::vector<float>> line;
 
-                            for (auto j = 0; j < height; j++)
+                            for (auto j = 0; j < width; j++)
                             {
                                 std::vector<float> pixel;
 
@@ -462,7 +469,7 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
                                 if (address != nullptr)
                                 {
-                                    const auto srcAddress = static_cast<BYTE*>(address);
+                                    const auto srcAddress = static_cast<const BYTE*>(address);
 
                                     pixel.push_back(srcAddress[r]);
                                     pixel.push_back(srcAddress[g]);

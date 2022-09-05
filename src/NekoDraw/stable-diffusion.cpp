@@ -453,27 +453,29 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
 
         const auto newWidth = (width + (kBaseSize - 1) / kBaseSize * kBaseSize);
         const auto newHeight = (height + (kBaseSize - 1) / kBaseSize * kBaseSize);
-        globals["image"] = numpy.attr("zeros")(std::vector{newWidth, newHeight, 3}, "dtype"_a = numpy.attr("float32"));
+        globals["image"] = numpy.attr("zeros")(std::vector{newHeight, newWidth, 3}, "dtype"_a = numpy.attr("uint8"));
 
         // below code toooooooooooooooooooooooooooooo slow......
-        for (auto i = 0; i < width; i++)
+        for (auto i = 0; i < height; i++)
         {
             const auto line = array[i];
 
-            for (auto j = 0; j < height; j++)
+            for (auto j = 0; j < width; j++)
             {
                 const auto r = line[j][0];
                 const auto g = line[j][1];
                 const auto b = line[j][2];
 
-                globals["image"].attr("__setitem__")(std::vector{i, j, 0}, py::float_(r));
-                globals["image"].attr("__setitem__")(std::vector{i, j, 1}, py::float_(g));
-                globals["image"].attr("__setitem__")(std::vector{i, j, 2}, py::float_(b));
+                globals["image"].attr("__setitem__")(std::tuple{j, i, 0}, py::int_(static_cast<int>(floor(r))));
+                globals["image"].attr("__setitem__")(std::tuple{j, i, 1}, py::int_(static_cast<int>(floor(g))));
+                globals["image"].attr("__setitem__")(std::tuple{j, i, 2}, py::int_(static_cast<int>(floor(b))));
             }
         }
 
+        globals["image"] = globals["image"].attr("astype")(numpy.attr("float32"));
         globals["image"] = eval("image / 255.0", globals);
         globals["image"] = py::eval("image[None].transpose(0, 3, 1, 2)");
+
         globals["image"] = torch.attr("from_numpy")(globals["image"]);
         globals["init_image"] = py::eval("2.0 * image - 1.0");
         globals["init_image"] = globals["init_image"].attr("half")();
