@@ -536,7 +536,7 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
         /**
          * t_enc = int(opt.strength * opt.ddim_steps)
          */
-        globals["t_enc"] = static_cast<int>(floor(0.5 * 50)); /* strength is currently 0.5, and ddim_steps is defaults 50 */
+        globals["t_enc"] = static_cast<int>(floor(prompt->strength * 50)); /* strength is currently 0.5, and ddim_steps is defaults 50 */
 
         /**
          * precision_scope = autocast

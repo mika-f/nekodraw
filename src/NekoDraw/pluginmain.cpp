@@ -9,6 +9,7 @@ static constexpr int kItemKeyServant = 4;
 static constexpr int kItemKeyFormatCaption = 5;
 static constexpr int kItemKeyFlavor = 6;
 static constexpr int kItemKeyMode = 7;
+static constexpr int kItemKeyStrength = 8;
 
 static constexpr int kStringIDFilterCategoryName = 101;
 static constexpr int kStringIDFilterName = 102;
@@ -19,6 +20,7 @@ static constexpr int kStringIDServant = 106;
 static constexpr int kStringIDFormatCaption = 107;
 static constexpr int kStringIDFlavor = 108;
 static constexpr int kStringIDMode = 109;
+static constexpr int kStringIDStrength = 110;
 
 static bool isPythonInterfaceInitialized = false;
 
@@ -62,6 +64,20 @@ void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, bool* ref, const Trigl
     if (*ref != newValueBoolObject)
     {
         *ref = newValueBoolObject;
+        *pResult = kTriglavPlugInPropertyCallBackResultModify;
+    }
+}
+
+void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, float* ref, const TriglavPlugInPropertyService* pPropertyService, const TriglavPlugInPropertyObject propertyObject, const TriglavPlugInInt itemKey)
+{
+    TriglavPlugInDouble newValueFloatObject;
+    (*pPropertyService).getDecimalValueProc(&newValueFloatObject, propertyObject, itemKey);
+
+    const float newValueFloat = static_cast<float>(newValueFloatObject);
+
+    if (*ref != newValueFloat)
+    {
+        *ref = newValueFloat;
         *pResult = kTriglavPlugInPropertyCallBackResultModify;
     }
 }
@@ -110,6 +126,9 @@ static void TRIGLAV_PLUGIN_CALLBACK TriglavPlugInFilterPropertyCallBack(TriglavP
         case kItemKeyMode:
             SetPropertyValueIfChanged(pResult, &pFilterInfo->isImg2ImgMode, pPropertyService, propertyObject, itemKey);
             break;
+
+        case kItemKeyStrength:
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->strength, pPropertyService, propertyObject, itemKey);
 
         default:
             break;
@@ -242,12 +261,25 @@ void CreateStringProperty(TriglavPlugInHostObject hostObject, TriglavPlugInPrope
     (*pStringService).releaseProc(caption);
 }
 
-void CreateBooleanProperty(TriglavPlugInHostObject hostObject, TriglavPlugInPropertyObject propertyObject, const TriglavPlugInStringService* pStringService, const TriglavPlugInPropertyService* pPropertyService, const int stringId, const int itemKey, const char shortcut)
+void CreateBooleanProperty(TriglavPlugInHostObject hostObject, TriglavPlugInPropertyObject propertyObject, const TriglavPlugInStringService* pStringService, const TriglavPlugInPropertyService* pPropertyService, const int stringId, const int itemKey, const bool def, const char shortcut)
 {
     TriglavPlugInStringObject caption = nullptr;
     (*pStringService).createWithStringIDProc(&caption, stringId, hostObject);
 
     (*pPropertyService).addItemProc(propertyObject, itemKey, kTriglavPlugInPropertyValueTypeBoolean, kTriglavPlugInPropertyInputKindDefault, kTriglavPlugInPropertyInputKindDefault, caption, shortcut);
+    (*pPropertyService).setBooleanDefaultValueProc(propertyObject, itemKey, def);
+    (*pStringService).releaseProc(caption);
+}
+
+void CreateDecimalProperty(TriglavPlugInHostObject hostObject, TriglavPlugInPropertyObject propertyObject, const TriglavPlugInStringService* pStringService, const TriglavPlugInPropertyService* pPropertyService, const int stringId, const int itemKey, const float def, const float min, const float max, const char shortcut)
+{
+    TriglavPlugInStringObject caption = nullptr;
+    (*pStringService).createWithStringIDProc(&caption, stringId, hostObject);
+
+    (*pPropertyService).addItemProc(propertyObject, itemKey, kTriglavPlugInPropertyValueTypeDecimal, kTriglavPlugInPropertyInputKindDefault, kTriglavPlugInPropertyInputKindDefault, caption, shortcut);
+    (*pPropertyService).setDecimalMinValueProc(propertyObject, itemKey, min);
+    (*pPropertyService).setDecimalMaxValueProc(propertyObject, itemKey, max);
+    (*pPropertyService).setDecimalDefaultValueProc(propertyObject, itemKey, def);
     (*pStringService).releaseProc(caption);
 }
 
@@ -283,7 +315,8 @@ void InitializePluginFilter(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
         CreateStringProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDServant, kItemKeyServant, 'h');
         CreateStringProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDFormatCaption, kItemKeyFormatCaption, 'd');
         CreateStringProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDFlavor, kItemKeyFlavor, 'l');
-        CreateBooleanProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDMode, kItemKeyMode, 'm');
+        CreateBooleanProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDMode, kItemKeyMode, true, 'm');
+        CreateDecimalProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDStrength, kItemKeyStrength, 0.75, 0.0, 1.0, 's');
 
         TriglavPlugInFilterInitializeSetProperty(pRecordSuite, hostObject, propertyObject);
         TriglavPlugInFilterInitializeSetPropertyCallBack(pRecordSuite, hostObject, TriglavPlugInFilterPropertyCallBack, *pData);
@@ -353,6 +386,7 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
         (*pFilterInfo).servant = u"";
         (*pFilterInfo).formatCaption = u"";
         (*pFilterInfo).flavor = u"";
+        (*pFilterInfo).strength = 0.75;
 
         bool restart = true;
 
