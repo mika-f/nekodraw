@@ -8,6 +8,7 @@ static constexpr int kItemKeySubjectCaption = 3;
 static constexpr int kItemKeyServant = 4;
 static constexpr int kItemKeyFormatCaption = 5;
 static constexpr int kItemKeyFlavor = 6;
+static constexpr int kItemKeyMode = 7;
 
 static constexpr int kStringIDFilterCategoryName = 101;
 static constexpr int kStringIDFilterName = 102;
@@ -17,6 +18,7 @@ static constexpr int kStringIDSubjectCaption = 105;
 static constexpr int kStringIDServant = 106;
 static constexpr int kStringIDFormatCaption = 107;
 static constexpr int kStringIDFlavor = 108;
+static constexpr int kStringIDMode = 109;
 
 static bool isPythonInterfaceInitialized = false;
 
@@ -32,13 +34,16 @@ void SetRootDirectory(std::string dir)
     PluginRootDirectory = dir;
 }
 
-void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, std::u16string* ref, const TriglavPlugInStringService* pStringService, TriglavPlugInStringObject newValueObject)
+void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, std::u16string* ref, const TriglavPlugInStringService* pStringService, const TriglavPlugInPropertyService2* pPropertyService2, const TriglavPlugInPropertyObject propertyObject, TriglavPlugInInt itemKey)
 {
+    TriglavPlugInStringObject newValueStringObject = nullptr;
+    (*pPropertyService2).getStringValueProc(&newValueStringObject, propertyObject, itemKey);
+
     TriglavPlugInInt len = 0;
-    pStringService->getUnicodeLengthProc(&len, newValueObject);
+    pStringService->getUnicodeLengthProc(&len, newValueStringObject);
 
     const TriglavPlugInUniChar* str{};
-    pStringService->getUnicodeCharsProc(&str, newValueObject);
+    pStringService->getUnicodeCharsProc(&str, newValueStringObject);
 
     const auto newValue = std::u16string{reinterpret_cast<const char16_t*>(str), static_cast<size_t>(len)};
 
@@ -49,46 +54,61 @@ void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, std::u16string* ref, c
     }
 }
 
+void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, bool* ref, const TriglavPlugInPropertyService* pPropertyService, const TriglavPlugInPropertyObject propertyObject, const TriglavPlugInInt itemKey)
+{
+    TriglavPlugInBool newValueBoolObject;
+    (*pPropertyService).getBooleanValueProc(&newValueBoolObject, propertyObject, itemKey);
+
+    if (*ref != newValueBoolObject)
+    {
+        *ref = newValueBoolObject;
+        *pResult = kTriglavPlugInPropertyCallBackResultModify;
+    }
+}
+
 static void TRIGLAV_PLUGIN_CALLBACK TriglavPlugInFilterPropertyCallBack(TriglavPlugInInt* pResult, TriglavPlugInPropertyObject propertyObject, TriglavPlugInInt itemKey, TriglavPlugInInt notify, TriglavPlugInPtr data)
 {
     *pResult = kTriglavPlugInPropertyCallBackResultNoModify;
 
-    auto pFilterInfo = static_cast<StableDiffusionPrompt*>(data);
+    const auto pFilterInfo = static_cast<StableDiffusionPrompt*>(data);
     if (pFilterInfo != nullptr)
     {
         const auto pStringService = (*pFilterInfo).pStringService;
+        const auto pPropertyService = (*pFilterInfo).pPropertyService;
         const auto pPropertyService2 = (*pFilterInfo).pPropertyService2;
 
         if (notify != kTriglavPlugInPropertyCallBackNotifyValueChanged)
             return;
 
-        TriglavPlugInStringObject newValueObject = nullptr;
-        (*pPropertyService2).getStringValueProc(&newValueObject, propertyObject, itemKey);
 
         switch (itemKey)
         {
         case kItemKeyFormat:
-            SetPropertyValueIfChanged(pResult, &pFilterInfo->format, pStringService, newValueObject);
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->format, pStringService, pPropertyService2, propertyObject, itemKey);
             break;
 
         case kItemKeySubject:
-            SetPropertyValueIfChanged(pResult, &pFilterInfo->subject, pStringService, newValueObject);
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->subject, pStringService, pPropertyService2, propertyObject, itemKey);
             break;
 
         case kItemKeySubjectCaption:
-            SetPropertyValueIfChanged(pResult, &pFilterInfo->subjectCaption, pStringService, newValueObject);
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->subjectCaption, pStringService, pPropertyService2, propertyObject, itemKey);
             break;
 
         case kItemKeyServant:
-            SetPropertyValueIfChanged(pResult, &pFilterInfo->servant, pStringService, newValueObject);
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->servant, pStringService, pPropertyService2, propertyObject, itemKey);
             break;
 
         case kItemKeyFormatCaption:
-            SetPropertyValueIfChanged(pResult, &pFilterInfo->formatCaption, pStringService, newValueObject);
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->formatCaption, pStringService, pPropertyService2, propertyObject, itemKey);
             break;
 
         case kItemKeyFlavor:
-            SetPropertyValueIfChanged(pResult, &pFilterInfo->flavor, pStringService, newValueObject);
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->flavor, pStringService, pPropertyService2, propertyObject, itemKey);
+            break;
+
+        case kItemKeyMode:
+            SetPropertyValueIfChanged(pResult, &pFilterInfo->isImg2ImgMode, pPropertyService, propertyObject, itemKey);
             break;
 
         default:
@@ -222,6 +242,15 @@ void CreateStringProperty(TriglavPlugInHostObject hostObject, TriglavPlugInPrope
     (*pStringService).releaseProc(caption);
 }
 
+void CreateBooleanProperty(TriglavPlugInHostObject hostObject, TriglavPlugInPropertyObject propertyObject, const TriglavPlugInStringService* pStringService, const TriglavPlugInPropertyService* pPropertyService, const int stringId, const int itemKey, const char shortcut)
+{
+    TriglavPlugInStringObject caption = nullptr;
+    (*pStringService).createWithStringIDProc(&caption, stringId, hostObject);
+
+    (*pPropertyService).addItemProc(propertyObject, itemKey, kTriglavPlugInPropertyValueTypeBoolean, kTriglavPlugInPropertyInputKindDefault, kTriglavPlugInPropertyInputKindDefault, caption, shortcut);
+    (*pStringService).releaseProc(caption);
+}
+
 void InitializePluginFilter(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, const TriglavPlugInServer* pPluginServer)
 {
     const auto pRecordSuite = &(*pPluginServer).recordSuite;
@@ -254,6 +283,7 @@ void InitializePluginFilter(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
         CreateStringProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDServant, kItemKeyServant, 'h');
         CreateStringProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDFormatCaption, kItemKeyFormatCaption, 'd');
         CreateStringProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDFlavor, kItemKeyFlavor, 'l');
+        CreateBooleanProperty(hostObject, propertyObject, pStringService, pPropertyService, kStringIDMode, kItemKeyMode, 'm');
 
         TriglavPlugInFilterInitializeSetProperty(pRecordSuite, hostObject, propertyObject);
         TriglavPlugInFilterInitializeSetPropertyCallBack(pRecordSuite, hostObject, TriglavPlugInFilterPropertyCallBack, *pData);
@@ -372,13 +402,67 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                     std::vector<std::vector<std::vector<float>>> array;
                     int destWidth, destHeight;
 
-                    const auto isSuccess = spStableDiffusion->RunText2ImageProcessor(pFilterInfo, width, height, &array, &destWidth, &destHeight);
-                    if (!isSuccess)
+                    if (pFilterInfo->isImg2ImgMode)
                     {
-                        TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+                        TriglavPlugInBitmapObject sourceBitmapObject = nullptr;
+                        (*pBitmapService).createProc(&sourceBitmapObject, width, height, 3, kTriglavPlugInBitmapScanlineHorizontalLeftTop);
 
-                        *pResult = kTriglavPlugInCallResultFailed;
-                        return;
+                        TriglavPlugInPoint bitmapSourcePoint{0, 0};
+                        TriglavPlugInPoint offScreenSourcePoint{0, 0};
+
+                        std::vector<std::vector<std::vector<float>>> pixels;
+
+                        (*pOffscreenService).getBitmapProc(sourceBitmapObject, &bitmapSourcePoint, selectAreaOffscreenObject, &offScreenSourcePoint, width, height, kTriglavPlugInOffscreenCopyModeImage);
+
+                        for (auto i = 0; i < width; i++)
+                        {
+                            std::vector<std::vector<float>> line;
+
+                            for (auto j = 0; j < height; j++)
+                            {
+                                std::vector<float> pixel;
+
+                                TriglavPlugInPtr address;
+                                TriglavPlugInPoint point = {i, j};
+                                (*pBitmapService).getAddressProc(&address, sourceBitmapObject, &point);
+
+                                if (address != nullptr)
+                                {
+                                    const auto srcAddress = static_cast<BYTE*>(address);
+
+                                    pixel.push_back(srcAddress[r]);
+                                    pixel.push_back(srcAddress[g]);
+                                    pixel.push_back(srcAddress[b]);
+                                }
+                                else
+                                {
+                                    // filled by white (255, 255, 255)
+                                    pixel.push_back(255.0);
+                                    pixel.push_back(255.0);
+                                    pixel.push_back(255.0);
+                                }
+
+                                line.push_back(pixel);
+                            }
+
+                            pixels.push_back(line);
+                        }
+
+                        if (const auto isSuccess = spStableDiffusion->RunImage2ImageProcessor(pFilterInfo, pixels, &array, &destWidth, &destHeight); !isSuccess)
+                        {
+                            TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+                            *pResult = kTriglavPlugInCallResultFailed;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (const auto isSuccess = spStableDiffusion->RunText2ImageProcessor(pFilterInfo, width, height, &array, &destWidth, &destHeight); !isSuccess)
+                        {
+                            TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+                            *pResult = kTriglavPlugInCallResultFailed;
+                            break;
+                        }
                     }
 
                     TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 75);

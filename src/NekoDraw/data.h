@@ -12,6 +12,7 @@ struct StableDiffusionPrompt
     std::u16string servant;
     std::u16string formatCaption;
     std::u16string flavor;
+    bool isImg2ImgMode;
 
     TriglavPlugInStringService* pStringService;
     TriglavPlugInPropertyService* pPropertyService;

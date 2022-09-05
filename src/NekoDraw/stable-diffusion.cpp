@@ -156,11 +156,13 @@ bool StableDiffusion::InitializeModels()
         /**
          * model.half();
          * modelCS.half();
+         * modelFS.hald(); # required?
          *
          * start_code = None
          */
         globals["model"].attr("half")();
         globals["modelCS"].attr("half")();
+        globals["modelFS"].attr("half")();
         globals["start_code"] = nullptr;
 
         this->isInitializeModels = true;
@@ -380,6 +382,334 @@ bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int 
                             * x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
                             * Image.fromarray(x_sample.astype(np.uint8)).save(...)
                             */
+
+                            globals["x_samples_ddim"] = globals["modelFS"].attr("decode_first_stage")(globals["samples_ddim"].attr("__getitem__")(i).attr("unsqueeze")(0));
+                            globals["t"] = eval("(x_samples_ddim + 1.0) / 2.0", globals);
+                            globals["x_sample"] = torch.attr("clamp")(globals["t"], "min"_a = 0.0, "max"_a = 1.0);
+                            globals["t"] = einops.attr("rearrange")(globals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
+                            globals["x_sample"] = eval("255.0 * t", globals);
+
+                            auto samples = globals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
+                            auto width = static_cast<int>(samples.size());
+                            auto height = static_cast<int>(samples[0].size());
+
+                            *pWidth = width;
+                            *pHeight = height;
+                            *pArray = samples;
+
+                            hResult = true;
+                        }
+                    }
+                    catch (py::error_already_set& e)
+                    {
+                        MessageBoxA(nullptr, e.what(), "Stable Diffusion Error :: Run", 0);
+                    }
+
+                    precision_scope.attr("__exit__")(nullptr, nullptr, nullptr);
+                }
+            }
+            catch (py::error_already_set& e)
+            {
+                MessageBoxA(nullptr, e.what(), "Stable Diffusion Error :: Run", 0);
+            }
+
+            no_grad_scope.attr("__exit__")(nullptr, nullptr, nullptr);
+        }
+    }
+    catch (py::error_already_set& e)
+    {
+        MessageBoxA(nullptr, e.what(), "Stable Diffusion Error :: Run", 0);
+    }
+
+    return hResult;
+}
+
+bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std::vector<std::vector<std::vector<float>>> array, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const
+{
+    bool hResult = false;
+
+    try
+    {
+        /**
+         * def load_img(path, h0, w0) :
+         *     image = Image.open(path).convert("RGB");
+         *     w, h = image.size
+         *
+         *     if h0 is not None and w0 is not None:
+         *          h, w = h0, w0
+         *
+         *     w, h = map(lambda x: x - x % 64, (w, h))
+         *
+         *     image = image.resize((w, h), resample=Image.LANCZOS)
+         *     image = np.array(image).astype(np.float32) / 255.0
+         *     image = image[None].transpose(0, 3, 1, 2)
+         *     image = torch.from_numpy(image)
+         *     return 2.0 * image - 1.0
+         */
+
+        const auto width = static_cast<int>(array.size());
+        const auto height = static_cast<int>(array[0].size());
+        constexpr auto kBaseSize = 32;
+
+        const auto newWidth = (width + (kBaseSize - 1) / kBaseSize * kBaseSize);
+        const auto newHeight = (height + (kBaseSize - 1) / kBaseSize * kBaseSize);
+        globals["image"] = numpy.attr("zeros")(std::vector{newWidth, newHeight, 3}, "dtype"_a = numpy.attr("float32"));
+
+        // below code toooooooooooooooooooooooooooooo slow......
+        for (auto i = 0; i < width; i++)
+        {
+            const auto line = array[i];
+
+            for (auto j = 0; j < height; j++)
+            {
+                const auto r = line[j][0];
+                const auto g = line[j][1];
+                const auto b = line[j][2];
+
+                globals["image"].attr("__getitem__")(std::vector{i, j, 0}) = py::float_(r);
+                globals["image"].attr("__getitem__")(std::vector{i, j, 1}) = py::float_(g);
+                globals["image"].attr("__getitem__")(std::vector{i, j, 2}) = py::float_(b);
+            }
+        }
+
+        globals["image"] = eval("image / 255.0", globals);
+        globals["image"] = py::eval("image[None].transpose(0, 3, 1, 2)");
+        globals["image"] = torch.attr("from_numpy")(globals["image"]);
+        globals["init_image"] = py::eval("2.0 * image - 1.0");
+        globals["init_image"] = globals["init_image"].attr("half")();
+
+        /**
+         * batch_size = opt.n_samples;
+         * n_rows = opt.n_rows if opt.n_rows > 0 else batch_size
+         * prompt = opt.prompt
+         * data = [batch_size * [prompt]]
+         */
+        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+        const auto vec = std::vector{
+            convert.to_bytes(prompt->format),
+            convert.to_bytes(prompt->subject),
+            convert.to_bytes(prompt->subjectCaption),
+            convert.to_bytes(prompt->servant),
+            convert.to_bytes(prompt->formatCaption),
+            convert.to_bytes(prompt->flavor)
+        };
+        const auto delimiter = " ";
+        std::ostringstream os;
+        std::ranges::copy(vec, std::ostream_iterator<std::string>(os, delimiter));
+        std::string s = trim_c(os.str());
+
+        if (s.empty())
+            return false;
+
+        globals["batch_size"] = 1;
+        globals["n_rows"] = 1;
+        globals["prompt"] = trim_c(s);
+        globals["prompt_a"] = std::vector{globals["prompt"]};
+        globals["data"] = std::vector{globals["batch_size"] * globals["prompt_a"]};
+
+        /**
+         * modelFS.to("cuda")
+         *
+         * init_image = repeat(init_image, "1 ... -> b ...", b=batch_size)
+         * init_latent = modelFS.get_first_stage_encoding(modelFS.encode_first_stage(init_image))
+         */
+        globals["modelFS"].attr("to")("cuda");
+        globals["init_image"] = globals["init_image"].attr("to")("cuda");
+
+        globals["init_image"] = einops.attr("repeat")(globals["init_image"], "1 ... -> b ...", "b"_a = globals["batch_size"]);
+        globals["init_latent"] = globals["modelFS"].attr("encode_first_stage")(globals["init_image"]);
+        globals["init_latent"] = globals["modelFS"].attr("get_first_stage_encoding")(globals["init_latent"]);
+
+        /**
+         * if opt.device != "cpu":
+         *     mem = torch.cuda.memory_allocated() / 1e6
+         *     modelFS.to("cpu")
+         *     while torch.cuda.memory_allocated() / 1e6 >= mem:
+         *         time.sleep(1)
+         */
+        const auto mem = torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001;
+        globals["modelFS"].attr("to")("cpu");
+
+        while (torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001 >= mem)
+            Sleep(1000);
+
+        /**
+         * t_enc = int(opt.strength * opt.ddim_steps)
+         */
+        globals["t_enc"] = static_cast<int>(floor(0.5 * 50)); /* strength is currently 0.5, and ddim_steps is defaults 50 */
+
+        /**
+         * precision_scope = autocast
+         * seeds = ""
+         */
+        globals["precision_scope"] = torch.attr("autocast");
+        globals["seeds"] = "";
+
+        /**
+         * with torch.no_grad():
+         */
+        {
+            const auto no_grad_scope = torch.attr("no_grad")();
+            no_grad_scope.attr("__enter__")();
+
+            try
+            {
+                /**
+                 * all_samples = list()
+                 */
+                globals["all_samples"] = py::list();
+
+                /**
+                 * for n in trange(opt.n_iter, desc="Sampling") # opts.n_iter = 1
+                 */
+                const py::list data = globals["data"];
+                for (const py::handle& prompts : data)
+                {
+                    /**
+                     * sample_path = os.path.join(outpath, "_".join(re.split(":| ", prompts[0])))[:150]
+                     * os.makedirs(sample_path, exists_ok=True)
+                     * base_count = len(os.listdir(sample_path))
+                     */
+
+                    /**
+                     * with precision_scope("cuda"):
+                     */
+                    const auto precision_scope = globals["precision_scope"]("cuda");
+                    precision_scope.attr("__enter__")();
+
+                    try
+                    {
+                        /**
+                         * modelCS.to("cuda")
+                         * uc = None
+                         * if opt.scale != 1.0:
+                         *     uc = modelCS.get_learned_conditioning(batch_size * [""])
+                         * if isinstance(prompts, tuple):
+                         *     prompts = list(prompts)
+                         */
+                        globals["modelCS"].attr("to")("cuda");
+                        globals["uc"] = nullptr;
+
+                        if constexpr (true)
+                        {
+                            globals["t"] = std::vector<std::string>{""};
+                            globals["uc"] = globals["modelCS"].attr("get_learned_conditioning")(globals["batch_size"] * globals["t"]);
+                        }
+
+                        const auto tuple = py::tuple();
+                        if (isinstance(prompts, tuple))
+                        {
+                            globals["prompts"] = py::list(py::tuple(prompts.cast<py::object>()));
+                        }
+                        else
+                        {
+                            globals["prompts"] = prompts;
+                        }
+
+
+                        /**
+                         * subprompts, weights = split_weighted_subprompts(prompts[0])
+                         * if len(subprompts) > 1:
+                         */
+                        std::vector<std::string> subprompts;
+                        std::vector<float> weights;
+                        auto prompts = globals["prompts"].cast<std::vector<std::string>>();
+                        this->SplitWeightedSubprompts(prompts[0], &subprompts, &weights);
+
+                        globals["subprompts"] = subprompts;
+                        globals["weights"] = weights;
+
+                        /**
+                         * if len(subprompts) > 1
+                         */
+                        if (subprompts.size() > 1)
+                        {
+                            /**
+                             * c = torch.zeros_like(uc);
+                             * totalWeight = sum(weights);
+                             */
+                            globals["c"] = torch.attr("zeros_like")(globals["uc"]);
+                            const auto totalWeight = std::accumulate(weights.begin(), weights.end(), 0.0f);
+
+                            /**
+                             * for i in range(len(subprompts)):
+                             */
+                            for (auto i = 0; i < subprompts.size(); i++)
+                            {
+                                /**
+                                 * weight = weights[i]
+                                 * weight = weight / totalWeight
+                                 * c = torch.add(c, modelCS.get_learned_conditioning(subprompts[i]), alpha=weight)
+                                 */
+                                const auto weight = weights[i] / totalWeight;
+                                globals["c"] = torch.attr("add")(globals["c"], globals["modelCS"].attr("get_learned_conditioning")(subprompts[i]), "alpha"_a = weight);
+                            }
+                        }
+                        else
+                        {
+                            /**
+                             * c = modelCS.get_learned_conditioning(prompts)
+                             */
+                            globals["c"] = globals["modelCS"].attr("get_learned_conditioning")(prompts);
+                        }
+
+
+                        /**
+                         * if opt.device != "cpu":
+                         *     mem = torch.cuda.memory_allocated() / 1e6
+                         *     modelCS.to("cpu")
+                         *     while torch.cuda.memoty_allocated() / 1e6 >= mem:
+                         *         time.sleep(1)
+                         */
+                        const auto mem = torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001;
+                        globals["modelCS"].attr("to")("cpu");
+
+                        while (torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001 >= mem)
+                            Sleep(1000);
+
+                        /**
+                         * z_enc = model.stochastic_encode(
+                         *     init_latent,
+                         *     torch.tensor({t_enc} * batch_size).to("cuda"),
+                         *     opt.seed,
+                         *     opt.ddim_eta,
+                         *     opt.ddim_step
+                         * )
+                         * sample_ddim = model.decode(
+                         *     z_enc,
+                         *     c,
+                         *     t_enc,
+                         *     unconditional_guidance_scale=opt.scale,
+                         *     unconditional_conditioning_uc
+                         * )
+                         */
+                        globals["t"] = eval("[t_enc] * batch_size", globals);
+                        globals["z_enc"] = globals["model"].attr("stochastic_encode")(
+                            globals["init_latent"],
+                            torch.attr("tensor")(globals["t"]).attr("to")("cuda"),
+                            globals["seed"],
+                            0.0,
+                            50
+                        );
+
+                        globals["samples_ddim"] = globals["model"].attr("decode")(
+                            globals["z_enc"],
+                            globals["c"],
+                            globals["t_enc"],
+                            "unconditional_guidance_scale"_a = 7.5,
+                            "unconditional_conditioning"_a = globals["uc"]
+                        );
+
+                        globals["modelFS"].attr("to")("cuda");
+
+                        for (auto i = 0; i < globals["batch_size"].cast<int>(); i++)
+                        {
+                            /**
+                             * x_samples_ddim = modelFS.decode_first_stage(samples_ddim[i].unsqueeze(0))
+                             * x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+                             * x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
+                             * Image.fromarray(x_sample.astype(np.uint8)).save(...)
+                             */
 
                             globals["x_samples_ddim"] = globals["modelFS"].attr("decode_first_stage")(globals["samples_ddim"].attr("__getitem__")(i).attr("unsqueeze")(0));
                             globals["t"] = eval("(x_samples_ddim + 1.0) / 2.0", globals);

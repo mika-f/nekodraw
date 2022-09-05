@@ -60,6 +60,7 @@ BEGIN
     IDS_STRING106           "作者・スタイル"
     IDS_STRING107           "全体フォーマット (補足)"
     IDS_STRING108           "フレーバー"
+    IDS_STRING109           "img2img モード"
 END
 
 #endif    // Japanese (Japan) resources
