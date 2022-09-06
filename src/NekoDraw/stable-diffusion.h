@@ -70,6 +70,7 @@ public:
     [[nodiscard]] bool InitializeModels();
     [[nodiscard]] bool IsInterpreterInitialized() const;
     [[nodiscard]] bool IsModelsInitialized() const;
+    [[nodiscard]] bool ShuffleSeed() const;
     bool RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, Pixels* pArray, int* pWidth, int* pHeight) const;
     bool RunImage2ImageProcessor(StableDiffusionPrompt* prompt, Pixels array, Pixels* pArray, int* pWidth, int* pHeight) const;
 };

@@ -25,7 +25,6 @@ bool StableDiffusion::InitializeInterpreter()
 
         globals["config"] = os.attr("path").attr("join")(root, "configs", "v1-inference.yaml");
         globals["ckpt"] = os.attr("path").attr("join")(root, "models", "ldm", "stable-diffusion-v1", "sd-v1-4.ckpt");
-        globals["seed"] = random.attr("randint")(0, 1000000);
 
         this->isInitializeInterpreter = true;
 
@@ -43,10 +42,8 @@ bool StableDiffusion::InitializeModels()
     try
     {
         /*
-         * seed_everything(seed)
          * sd = load_model_from_config(ckpt);
          */
-        pytorchlightning.attr("seed_everything")(globals["seed"]);
         globals["sd"] = this->LoadModelFromConfig(globals["ckpt"]);
 
         /**
@@ -185,6 +182,23 @@ bool StableDiffusion::IsModelsInitialized() const
 {
     return this->isInitializeModels;
 }
+
+bool StableDiffusion::ShuffleSeed() const
+{
+    try
+    {
+        globals["seed"] = random.attr("randint")(0, 1000000);
+        pytorchlightning.attr("seed_everything")(globals["seed"]);
+
+        return true;
+    }
+    catch (py::error_already_set& e)
+    {
+        MessageBoxA(nullptr, e.what(), "Stable Diffusion Error :: Initialize Models", 0);
+        return false;
+    }
+}
+
 
 bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const
 {

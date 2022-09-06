@@ -433,6 +433,13 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                         }
                     }
 
+                    if (const auto isShuffled = spStableDiffusion->ShuffleSeed(); !isShuffled)
+                    {
+                        TriglavPlugInFilterRunSetProgressDone(pRecordSuite, hostObject, 100);
+                        *pResult = kTriglavPlugInCallResultFailed;
+                        break;
+                    }
+
                     std::vector<std::vector<std::vector<float>>> array;
                     int destWidth, destHeight;
 
