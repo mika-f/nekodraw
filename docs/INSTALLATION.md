@@ -29,16 +29,18 @@
 1. NekoDraw プラグイン本体
    1. [GitHub Releases ページ](https://github.com/mika-f/nekodraw/releases/latest)から、最新の `NekoDraw-Plugin-vx.x.x.zip` をダウンロードしてください
 2. NekoDraw ランタイム
-   1. [GitHub Releases ページ](https://github.com/mika-f/nekodraw/releases/latest)から、最新の `NekoDraw-Runtime-vx.x.x.zip` をダウンロードしてください
+   1. [Natsuneko Laboratory Archives](https://archive.natsuneko.moe/n/e/NekoDraw/Runtime/NekoDraw-Runtime-v0.1.0.zip) から、最新の `NekoDraw-Runtime-vx.x.x.zip` をダウンロードしてください
+   2. ※数 GB ありますのでご注意ください
 3. NekoDraw 設定構成ファイル
    1. [GitHub Releases ページ](https://github.com/mika-f/nekodraw/releases/latest)から、最新の `NekoDraw-Conf-vx.x.x.zip` をダウンロードしてください
 4. Stable Diffusion 学習済みモデル
    1. [Hugging Face の該当ページ](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)から、最新の `sd-v1-4.ckpt` をダウンロードしてください
+   2. ※数 GB ありますのでご注意ください
 
 ## 解凍
 
 以下のファイルについて、解凍を行ってください。  
-**なお、ランタイム内にある zip ファイルについては解凍を行わないでください。**
+**なお、ランタイム内にある zip ファイル (`python310.zip`) については解凍を行わないでください。**
 
 1. `NekoDraw-Plugin-vx.x.x.zip`
 2. `NekoDraw-Runtime-vx.x.x.zip`
@@ -97,3 +99,4 @@ NekoDrawRuntimeUri=C:\Users\natsuneko\Documents\NekoDraw
 ## 不明点について
 
 不明点などがありましたら、 Twitter アカウント [@6jz](https://twitter.com/6jz) までご連絡ください。
+サポートについては GitHub アカウントをお持ちの方は Issue もしくは PR にて、その他の方は上記 Twitter までご連絡ください。

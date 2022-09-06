@@ -13,39 +13,22 @@ Stable Diffusion の txt2img, img2img プロセッサを実行する CLIP STUDIO
 - Text to Image : https://twitter.com/6jz/status/1566052868016054272
 - Image to Image : https://twitter.com/6jz/status/1566812883433902080
 
-## 必須事項
+## インストール
 
-- Windows 10 以上 (たぶん古い Windows でも動きますが、サポートはしません)
-- 16GB 以上のメモリ (12GB Free)
-- GeForce RTX 3060 ビデオカード (>= 8GB VRAM) もしくは同等のビデオカード、
-- NekoDraw ランタイム
-  - 今後このページにて配布予定です
-  - なお、このランタイムには Stable Diffusion のモデルを含んで最大 40GB のディスクスペースが必要です
+[INSTALLATION](./docs/INSTALLATION.md) を参照ください。
 
 ## Usage
 
-1. Download Plugin (`.cpm`) from GitHub Releases : [Download](https://github.com)
-2. Download Runtime from Natsuneko Laboratory S3 : [Download](https://archive.natsuneko.moe)
-3. Configure `NekoDraw.ini` in CLIP STUDIO PAINT : [Help Doc](https://docs.natsuneko.moe)
+下記ドキュメントを参照ください:
 
-## Configure
+- [PROMPT](./docs/PROMPT.md) (Japanese)
 
-`NekoDraw.ini` をテキストエディタで開き、下記のように編集してください：
+## FAQ
 
-```txt
-[NekoDraw]
-NekoDrawRuntimeUri=[NekoDraw ランタイムのフルパス]
-```
+### なぜローカル環境で動かすのですか？
 
-例:
-
-```txt
-[NekoDraw]
-NekoDrawRuntimeUri=M:\repos\github.com\mika-f\nekodraw\runtime\NekoDraw
-```
-
-そして、 `NekoDraw.ini` をプラグインと同じ場所に置いてください。
-通常、プラグインは `%APPDATA%/CELSYSUserData\CELSYS\CLIPStudioModule\PlugIn\PAINT` に置かれています。
+基本的に、製作途中のイラストを Google などの検閲されるうるサービスやインターネット上に公開することは、機密情報の漏洩に繋がると考えているためです。  
+また、検閲によるアカウント損失のリスクを背負うことにもなるためです。
 
 ## License
 
