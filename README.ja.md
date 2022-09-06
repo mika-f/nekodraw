@@ -39,7 +39,8 @@ NekoDrawRuntimeUri=[NekoDraw ランタイムのフルパス]
 
 例:
 
-```txt[NekoDraw]
+```txt
+[NekoDraw]
 NekoDrawRuntimeUri=M:\repos\github.com\mika-f\nekodraw\runtime\NekoDraw
 ```
 

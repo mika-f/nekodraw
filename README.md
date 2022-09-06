@@ -39,7 +39,8 @@ NekoDrawRuntimeUri=[FULL_PATH_OF_NEKODRAW_RUNTIME]
 
 For Example:
 
-```txt[NekoDraw]
+```txt
+[NekoDraw]
 NekoDrawRuntimeUri=M:\repos\github.com\mika-f\nekodraw\runtime\NekoDraw
 ```
 
