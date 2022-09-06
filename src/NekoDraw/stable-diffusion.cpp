@@ -462,13 +462,10 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
 
             for (auto j = 0; j < width; j++)
             {
-                const auto r = line[j][0];
-                const auto g = line[j][1];
-                const auto b = line[j][2];
-
-                globals["image"].attr("__setitem__")(std::tuple{j, i, 0}, py::int_(static_cast<int>(floor(r))));
-                globals["image"].attr("__setitem__")(std::tuple{j, i, 1}, py::int_(static_cast<int>(floor(g))));
-                globals["image"].attr("__setitem__")(std::tuple{j, i, 2}, py::int_(static_cast<int>(floor(b))));
+                const auto r = static_cast<int>(floor(line[j][0]));
+                const auto g = static_cast<int>(floor(line[j][1]));
+                const auto b = static_cast<int>(floor(line[j][2]));
+                globals["image"].attr("__setitem__")(std::tuple{j, i}, std::vector{r, g, b});
             }
         }
 
