@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <string>
 #include <numeric>
+#include <tuple>
 #include <utility>
 
 #include "TriglavPlugInSDK.h"

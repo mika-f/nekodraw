@@ -71,6 +71,7 @@ public:
     [[nodiscard]] bool IsInterpreterInitialized() const;
     [[nodiscard]] bool IsModelsInitialized() const;
     [[nodiscard]] bool ShuffleSeed() const;
+    [[nodiscard]] static std::tuple<int, int> GetMinimalAvailableSize(int width, int height);
     bool RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, Pixels* pArray, int* pWidth, int* pHeight) const;
     bool RunImage2ImageProcessor(StableDiffusionPrompt* prompt, Pixels array, Pixels* pArray, int* pWidth, int* pHeight) const;
 };

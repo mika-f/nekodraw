@@ -199,6 +199,15 @@ bool StableDiffusion::ShuffleSeed() const
     }
 }
 
+std::tuple<int, int> StableDiffusion::GetMinimalAvailableSize(int width, int height)
+{
+    constexpr auto kBaseSize = 64;
+
+    auto newWidth = (width + (kBaseSize - 1)) / kBaseSize * kBaseSize;
+    auto newHeight = (height + (kBaseSize - 1)) / kBaseSize * kBaseSize;
+
+    return {newWidth, newHeight};
+}
 
 bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const
 {
@@ -206,6 +215,7 @@ bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int 
 
     try
     {
+        const auto [newWidth, newHeight] = GetMinimalAvailableSize(width, height);
         /**
          * batch_size = opt.n_samples;
          * n_rows = opt.n_rows if opt.n_rows > 0 else batch_size
@@ -463,10 +473,8 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
 
         const auto width = static_cast<int>(array.size());
         const auto height = static_cast<int>(array[0].size());
-        constexpr auto kBaseSize = 32;
 
-        const auto newWidth = (width + (kBaseSize - 1) / kBaseSize * kBaseSize);
-        const auto newHeight = (height + (kBaseSize - 1) / kBaseSize * kBaseSize);
+        const auto [newWidth, newHeight] = GetMinimalAvailableSize(width, height);
         globals["image"] = numpy.attr("zeros")(std::vector{newHeight, newWidth, 3}, "dtype"_a = numpy.attr("uint8"));
 
         // below code toooooooooooooooooooooooooooooo slow......
@@ -764,7 +772,6 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
     return hResult;
 }
 
-
 py::object StableDiffusion::LoadModelFromConfig(py::object ckpt) const
 {
     try
@@ -778,7 +785,6 @@ py::object StableDiffusion::LoadModelFromConfig(py::object ckpt) const
         return py::object();
     }
 }
-
 
 void StableDiffusion::SplitWeightedSubprompts(std::string text, std::vector<std::string>* pSubprompts, std::vector<float>* pWeights) const
 {
