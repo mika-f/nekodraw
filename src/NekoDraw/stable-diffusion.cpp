@@ -362,7 +362,7 @@ bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int 
                         /**
                          * shape = [opt.C, opt.H // opt.f, opt.W // opt.f];
                          */
-                        globals["shape"] = std::vector{/* opt.C*/ 4, static_cast<int>(floor(/* opt.H */ height / 8)), static_cast<int>(floor(/* opt.W */ width / 8))};
+                        globals["shape"] = std::vector{/* opt.C*/ 4, static_cast<int>(floor(/* opt.H */ newHeight / 8)), static_cast<int>(floor(/* opt.W */ newWidth / 8))};
 
                         /**
                          * if opt.device != "cpu":
