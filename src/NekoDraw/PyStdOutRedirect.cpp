@@ -15,6 +15,7 @@ PYBIND11_EMBEDDED_MODULE(redirect_sys_stdout, m)
     StdRedirect.def_static("write", [](const py::object buffer)
     {
         std::cout << buffer.cast<std::string>();
+        OutputDebugStringA(buffer.cast<std::string>().c_str());
     });
 
     StdRedirect.def_static("flush", []()
