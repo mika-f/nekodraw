@@ -359,14 +359,20 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
         TriglavPlugInInt width;
         TriglavPlugInInt height;
+        TriglavPlugInInt top;
+        TriglavPlugInInt left;
 
         if (selectAreaOffscreenObject != nullptr)
         {
             (*pOffscreenService).getWidthProc(&width, selectAreaOffscreenObject);
             (*pOffscreenService).getHeightProc(&height, selectAreaOffscreenObject);
+            top = selectAreaRect.top;
+            left = selectAreaRect.left;
         }
         else
         {
+            top = 0;
+            left = 0;
             (*pOffscreenService).getWidthProc(&width, destinationOffscreenObject);
             (*pOffscreenService).getHeightProc(&height, destinationOffscreenObject);
         }
@@ -565,7 +571,7 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
         if (*pResult == kTriglavPlugInCallResultSuccess)
         {
-            TriglavPlugInPoint offscreenPos{0, 0};
+            TriglavPlugInPoint offscreenPos{left, top};
             TriglavPlugInPoint bitmapPos{0, 0};
             (*pOffscreenService).setBitmapProc(destinationOffscreenObject, &offscreenPos, destinationBitmapObject, &bitmapPos, width, height, kTriglavPlugInOffscreenCopyModeImage);
 
