@@ -72,6 +72,7 @@ public:
     [[nodiscard]] bool IsModelsInitialized() const;
     [[nodiscard]] bool ShuffleSeed() const;
     [[nodiscard]] static std::tuple<int, int> GetMinimalAvailableSize(int width, int height);
+    [[nodiscard]] static std::string GetPromptString(StableDiffusionPrompt* prompt);
     bool RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, Pixels* pArray, int* pWidth, int* pHeight) const;
     bool RunImage2ImageProcessor(StableDiffusionPrompt* prompt, Pixels array, Pixels* pArray, int* pWidth, int* pHeight) const;
 };

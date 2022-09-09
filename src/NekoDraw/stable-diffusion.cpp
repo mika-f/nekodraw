@@ -209,6 +209,23 @@ std::tuple<int, int> StableDiffusion::GetMinimalAvailableSize(int width, int hei
     return {newWidth, newHeight};
 }
 
+std::string StableDiffusion::GetPromptString(StableDiffusionPrompt* prompt)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+    const auto vec = std::vector{
+        convert.to_bytes(prompt->format),
+        convert.to_bytes(prompt->subject),
+        convert.to_bytes(prompt->subjectCaption),
+        convert.to_bytes(prompt->servant),
+        convert.to_bytes(prompt->formatCaption),
+        convert.to_bytes(prompt->flavor)
+    };
+    const auto delimiter = " ";
+    std::ostringstream os;
+    std::ranges::copy(vec, std::ostream_iterator<std::string>(os, delimiter));
+    return trim_c(os.str());
+}
+
 bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int width, int height, std::vector<std::vector<std::vector<float>>>* pArray, int* pWidth, int* pHeight) const
 {
     bool hResult = false;
@@ -222,20 +239,8 @@ bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int 
          * prompt = opt.prompt
          * data = [batch_size * [prompt]]
          */
-        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-        const auto vec = std::vector{
-            convert.to_bytes(prompt->format),
-            convert.to_bytes(prompt->subject),
-            convert.to_bytes(prompt->subjectCaption),
-            convert.to_bytes(prompt->servant),
-            convert.to_bytes(prompt->formatCaption),
-            convert.to_bytes(prompt->flavor)
-        };
-        const auto delimiter = " ";
-        std::ostringstream os;
-        std::ranges::copy(vec, std::ostream_iterator<std::string>(os, delimiter));
-        std::string s = trim_c(os.str());
 
+        const auto s = GetPromptString(prompt);
         if (s.empty())
             return false;
 
@@ -505,20 +510,7 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
          * prompt = opt.prompt
          * data = [batch_size * [prompt]]
          */
-        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-        const auto vec = std::vector{
-            convert.to_bytes(prompt->format),
-            convert.to_bytes(prompt->subject),
-            convert.to_bytes(prompt->subjectCaption),
-            convert.to_bytes(prompt->servant),
-            convert.to_bytes(prompt->formatCaption),
-            convert.to_bytes(prompt->flavor)
-        };
-        const auto delimiter = " ";
-        std::ostringstream os;
-        std::ranges::copy(vec, std::ostream_iterator<std::string>(os, delimiter));
-        std::string s = trim_c(os.str());
-
+        const auto s = GetPromptString(prompt);
         if (s.empty())
             return false;
 
