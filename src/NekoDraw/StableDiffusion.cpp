@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "stable-diffusion.h"
 
+#include "StableDiffusion.h"
 #include "PyImage.h"
 #include "strings.h"
 
@@ -447,6 +447,15 @@ bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int 
 
                             hResult = true;
                         }
+
+                        const auto mem2 = torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001;
+                        globals["modelFS"].attr("to")("cpu");
+
+                        while (torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001 >= mem2)
+                            Sleep(1000);
+
+                        exec("del samples_ddim", globals);
+                        globals["samples_ddim"] = nullptr;
                     }
                     catch (py::error_already_set& e)
                     {
@@ -514,6 +523,12 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
                 globals["image"].attr("__setitem__")(std::tuple{j, i}, std::vector{r, g, b});
             }
         }
+
+        {
+            const auto img = new PyImage(globals["image"]);
+            img->Save("C:\\Users\\natsuneko\\Downloads\\src.png");
+        }
+
 
         globals["image"] = globals["image"].attr("astype")(numpy.attr("float32"));
         globals["image"] = eval("image / 255.0", globals);

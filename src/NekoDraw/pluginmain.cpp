@@ -1,6 +1,7 @@
 #include "pch.h"
+
 #include "pluginmain.h"
-#include "stable-diffusion.h"
+#include "StableDiffusion.h"
 
 static constexpr int kItemKeyFormat = 1;
 static constexpr int kItemKeySubject = 2;
@@ -162,12 +163,6 @@ std::string GetLibraryPath(wchar_t* runtime)
 std::string GetRootPath(wchar_t* runtime)
 {
     return std::filesystem::path(runtime).string();
-}
-
-std::string GetPipPath()
-{
-    const auto path = std::filesystem::path(RuntimePath);
-    return (path / "get-pip.py").string();
 }
 
 wchar_t* AsWcharT(const std::string str)

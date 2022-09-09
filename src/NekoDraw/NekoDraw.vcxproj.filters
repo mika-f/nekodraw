@@ -30,7 +30,7 @@
     <ClInclude Include="pluginmain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stable-diffusion.h">
+    <ClInclude Include="StableDiffusion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="strings.h">
@@ -40,6 +40,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PyStdErrRedirect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PyImage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -53,13 +56,16 @@
     <ClCompile Include="pluginmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stable-diffusion.cpp">
+    <ClCompile Include="StableDiffusion.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PyStdErrRedirect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PyStdOutRedirect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PyImage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

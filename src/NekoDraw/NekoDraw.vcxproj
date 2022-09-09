@@ -161,7 +161,7 @@
     <ClInclude Include="PyStdOutRedirect.h" />
     <ClInclude Include="PyStdErrRedirect.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="stable-diffusion.h" />
+    <ClInclude Include="StableDiffusion.h" />
     <ClInclude Include="strings.h" />
   </ItemGroup>
   <ItemGroup>
@@ -176,7 +176,7 @@
     <ClCompile Include="PyImage.cpp" />
     <ClCompile Include="PyStdErrRedirect.cpp" />
     <ClCompile Include="PyStdOutRedirect.cpp" />
-    <ClCompile Include="stable-diffusion.cpp" />
+    <ClCompile Include="StableDiffusion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NekoDraw.rc" />
