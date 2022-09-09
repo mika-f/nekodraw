@@ -157,6 +157,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="pluginmain.h" />
+    <ClInclude Include="PyImage.h" />
     <ClInclude Include="PyStdOutRedirect.h" />
     <ClInclude Include="PyStdErrRedirect.h" />
     <ClInclude Include="resource.h" />
@@ -172,6 +173,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="pluginmain.cpp" />
+    <ClCompile Include="PyImage.cpp" />
     <ClCompile Include="PyStdErrRedirect.cpp" />
     <ClCompile Include="PyStdOutRedirect.cpp" />
     <ClCompile Include="stable-diffusion.cpp" />

@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "stable-diffusion.h"
+
+#include "PyImage.h"
 #include "strings.h"
 
 
@@ -428,6 +430,13 @@ bool StableDiffusion::RunText2ImageProcessor(StableDiffusionPrompt* prompt, int 
                             globals["t"] = einops.attr("rearrange")(globals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
                             globals["x_sample"] = eval("255.0 * t", globals);
 
+#ifdef _DEBUG
+                            {
+                                const auto img = new PyImage(globals["x_sample"]);
+                                img->Save("C:\\Users\\natsuneko\\Downloads\\dest.png");
+                            }
+#endif
+
                             auto samples = globals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
                             auto width = static_cast<int>(samples.size());
                             auto height = static_cast<int>(samples[0].size());
@@ -739,6 +748,13 @@ bool StableDiffusion::RunImage2ImageProcessor(StableDiffusionPrompt* prompt, std
                             globals["x_sample"] = torch.attr("clamp")(globals["t"], "min"_a = 0.0, "max"_a = 1.0);
                             globals["t"] = einops.attr("rearrange")(globals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
                             globals["x_sample"] = eval("255.0 * t", globals);
+
+#ifdef _DEBUG
+                            {
+                                const auto img = new PyImage(globals["x_sample"]);
+                                img->Save("C:\\Users\\natsuneko\\Downloads\\dest.png");
+                            }
+#endif
 
                             auto samples = globals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
                             auto width = static_cast<int>(samples.size());

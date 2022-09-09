@@ -33,7 +33,6 @@ private:
     py::object numpy;
     py::object omegaconf;
     py::object os;
-    py::object pil; // for debugging
     py::object pytorchlightning;
     py::object sys;
     py::object torch;
