@@ -364,10 +364,10 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
         if (selectAreaOffscreenObject != nullptr)
         {
-            (*pOffscreenService).getWidthProc(&width, selectAreaOffscreenObject);
-            (*pOffscreenService).getHeightProc(&height, selectAreaOffscreenObject);
             top = selectAreaRect.top;
             left = selectAreaRect.left;
+            width = abs(selectAreaRect.left - selectAreaRect.right);
+            height = abs(selectAreaRect.top - selectAreaRect.bottom);
         }
         else
         {
