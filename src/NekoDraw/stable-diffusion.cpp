@@ -10,6 +10,16 @@ bool StableDiffusion::InitializeInterpreter()
         sys = py::module::import("sys");
         os = py::module::import("os");
 
+#ifdef _DEBUG
+
+        sys.attr("path").attr("insert")(0, "");
+        sys.attr("path").attr("insert")(0, os.attr("path").attr("join")(root, "python310.zip"));
+        sys.attr("path").attr("insert")(0, os.attr("path").attr("join")(root));
+        sys.attr("path").attr("insert")(0, os.attr("path").attr("join")(root, "DLLs"));
+        sys.attr("path").attr("insert")(0, os.attr("path").attr("join")(root, "lib"));
+
+#endif
+
         sys.attr("path").attr("insert")(0, os.attr("path").attr("join")(root, "lib", "site-packages"));
         sys.attr("path").attr("insert")(0, os.attr("path").attr("join")(root, "src", "taming-transformers"));
         sys.attr("path").attr("insert")(0, os.attr("path").attr("join")(root, "src", "clip"));
