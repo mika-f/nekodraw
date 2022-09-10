@@ -30,10 +30,7 @@
     <ClInclude Include="pluginmain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StableDiffusion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="strings.h">
+    <ClInclude Include="Strings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PyStdOutRedirect.h">
@@ -43,6 +40,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PyImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Processor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StableDiffusionProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PythonProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PyWith.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StableDiffusionPrompt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TriglavBitmapObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -56,9 +71,6 @@
     <ClCompile Include="pluginmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StableDiffusion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PyStdErrRedirect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,6 +78,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PyImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StableDiffusionProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PyWith.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StableDiffusionPrompt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TriglavBitmapObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -157,12 +157,17 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="pluginmain.h" />
+    <ClInclude Include="Processor.h" />
     <ClInclude Include="PyImage.h" />
     <ClInclude Include="PyStdOutRedirect.h" />
     <ClInclude Include="PyStdErrRedirect.h" />
+    <ClInclude Include="PythonProcessor.h" />
+    <ClInclude Include="PyWith.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="StableDiffusion.h" />
-    <ClInclude Include="strings.h" />
+    <ClInclude Include="StableDiffusionProcessor.h" />
+    <ClInclude Include="StableDiffusionPrompt.h" />
+    <ClInclude Include="Strings.h" />
+    <ClInclude Include="TriglavBitmapObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -176,7 +181,10 @@
     <ClCompile Include="PyImage.cpp" />
     <ClCompile Include="PyStdErrRedirect.cpp" />
     <ClCompile Include="PyStdOutRedirect.cpp" />
-    <ClCompile Include="StableDiffusion.cpp" />
+    <ClCompile Include="PyWith.cpp" />
+    <ClCompile Include="StableDiffusionProcessor.cpp" />
+    <ClCompile Include="StableDiffusionPrompt.cpp" />
+    <ClCompile Include="TriglavBitmapObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NekoDraw.rc" />
