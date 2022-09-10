@@ -168,6 +168,7 @@
     <ClInclude Include="StableDiffusionPrompt.h" />
     <ClInclude Include="Strings.h" />
     <ClInclude Include="TriglavBitmapObject.h" />
+    <ClInclude Include="TriglavProgress.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -185,6 +186,7 @@
     <ClCompile Include="StableDiffusionProcessor.cpp" />
     <ClCompile Include="StableDiffusionPrompt.cpp" />
     <ClCompile Include="TriglavBitmapObject.cpp" />
+    <ClCompile Include="TriglavProgress.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NekoDraw.rc" />
