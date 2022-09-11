@@ -102,6 +102,7 @@ bool StableDiffusionProcessor::InitializeBackend()
 
         this->_einops = py::module::import("einops");
         this->_ldm = py::module::import("ldm.util");
+        this->_numpy = py::module::import("numpy");
         this->_omegaconf = py::module::import("omegaconf");
         this->_pytorchlightning = py::module::import("pytorch_lightning");
         this->_random = py::module::import("random");
@@ -191,7 +192,7 @@ bool StableDiffusionProcessor::InitializeModels(std::string ckpt)
         // 
         model.attr("half")();
         modelCS.attr("half")();
-        modelFS.attr("half");
+        modelFS.attr("half")();
 
         this->_globals["model"] = model;
         this->_globals["modelCS"] = modelCS;
@@ -346,23 +347,171 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
     return true;
 }
 
-bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, std::vector<std::vector<std::vector<float>>> array, std::vector<std::vector<std::vector<float>>>* pArray) const
+bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float strength, Image array, Image* pArray) const
 {
     bool hResult = false;
 
     try
     {
-        const auto width = static_cast<int>(array.size());
-        const auto height = static_cast<int>(array[0].size());
+        const auto locals = py::dict();
+
+        const auto height = static_cast<int>(array.size());
+        const auto width = static_cast<int>(array[0].size());
         const auto [newWidth, newHeight] = GetAvailableSquareSize(width, height);
+        const auto image = this->_numpy.attr("zeros")(std::vector{newHeight, newWidth, 3}, "dtype"_a = this->_numpy.attr("uint8"));
+
+        for (auto i = 0; i < height; i++)
+        {
+            const auto line = array[i];
+
+            for (auto j = 0; j < width; j++)
+            {
+                const auto r = static_cast<int>(floor(line[j][0]));
+                const auto g = static_cast<int>(floor(line[j][1]));
+                const auto b = static_cast<int>(floor(line[j][2]));
+
+                image.attr("__setitem__")(std::tuple{i, j}, std::vector{r, g, b});
+            }
+        }
+
+#ifdef _DEBUG
+        {
+            const auto img = new PyImage(image);
+            const auto dest = this->_os.attr("path").attr("join")(this->_debug, "src.png");
+            img->Save(dest.cast<std::string>());
+        }
+#endif
+
+        locals["image"] = image/*.attr("transpose")(1, 0, 2)*/.attr("astype")(this->_numpy.attr("float32"));
+        locals["image"] = eval("image / 255.0", this->_globals, locals);
+        locals["image"] = eval("image[None].transpose(0, 3, 1, 2)", this->_globals, locals);
+        locals["image"] = this->_torch.attr("from_numpy")(locals["image"]);
+
+        locals["init_image"] = eval("2.0 * image - 1.0", this->_globals, locals);
+        locals["init_image"] = locals["init_image"].attr("half")();
+
+        locals["prompt"] = prompt;
+        locals["data"] = std::vector{py::int_(1) * eval("[prompt]", this->_globals, locals)};
+        locals["precision_scope"] = this->_torch.attr("autocast");
+
+        this->_globals["modelFS"].attr("to")("cuda");
+        locals["init_image"] = locals["init_image"].attr("to")("cuda");
+        locals["init_image"] = this->_einops.attr("repeat")(locals["init_image"], "1 ... -> b ...", "b"_a = 1);
+
+        locals["init_latent"] = this->_globals["modelFS"].attr("encode_first_stage")(locals["init_image"]);
+        locals["init_latent"] = this->_globals["modelFS"].attr("get_first_stage_encoding")(locals["init_latent"]);
+
+        const auto mem = this->_torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001;
+        this->_globals["modelFS"].attr("to")("cpu");
+
+        while (this->_torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001 >= mem)
+            Sleep(1000);
+
+        locals["t_enc"] = static_cast<int>(floor(strength * 50));
+
+        with(this->_torch.attr("no_grad")(), [this, locals, pArray]
+        {
+            for (const py::handle& prompts : locals["data"])
+            {
+                with(locals["precision_scope"]("cuda"), [this, locals, prompts, pArray]
+                {
+                    this->_globals["modelCS"].attr("to")("cuda");
+                    py::object uc;
+
+                    if constexpr (true)
+                    {
+                        uc = this->_globals["modelCS"].attr("get_learned_conditioning")(py::eval("1 * [\"\"]"));
+                    }
+
+                    const auto tuple = py::tuple();
+                    if (isinstance(prompts, tuple))
+                    {
+                        locals["prompts"] = py::list(py::tuple(prompts.cast<py::object>()));
+                    }
+                    else
+                    {
+                        locals["prompts"] = prompts;
+                    }
+
+                    std::vector<std::string> subPrompts;
+                    std::vector<float> weights;
+                    const auto prompts = locals["prompts"].cast<std::vector<std::string>>();
+
+                    SplitWeightedSubPrompts(prompts[0], &subPrompts, &weights);
+
+                    py::object c;
+                    if (subPrompts.size() > 1)
+                    {
+                        c = this->_torch.attr("zeros_like")(uc);
+
+                        const auto totalWeight = std::accumulate(weights.begin(), weights.end(), 0.0f);
+
+                        for (auto i = 0; i < subPrompts.size(); i++)
+                        {
+                            const auto weight = weights[i] / totalWeight;
+                            c = this->_torch.attr("add")(c, this->_globals["modelCS"].attr("get_learned_conditioning")(subPrompts[i]), "alpha"_a = weight);
+                        }
+                    }
+                    else
+                    {
+                        c = this->_globals["modelCS"].attr("get_learned_conditioning")(prompts);
+                    }
+
+                    const auto mem = this->_torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001;
+                    this->_globals["modelCS"].attr("to")("cpu");
+
+                    while (this->_torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001 >= mem)
+                        Sleep(1000);
+
+                    const auto z_enc = this->_globals["model"].attr("stochastic_encode")(
+                        locals["init_latent"],
+                        this->_torch.attr("tensor")(eval("[t_enc] * 1", this->_globals, locals)).attr("to")("cuda"),
+                        this->_globals["seed"],
+                        0.0,
+                        50
+                    );
+
+                    const auto samples_ddim = this->_globals["model"].attr("decode")(
+                        z_enc,
+                        c,
+                        locals["t_enc"],
+                        "unconditional_guidance_scale"_a = 7.5,
+                        "unconditional_conditioning"_a = uc
+                    );
+
+                    this->_globals["modelFS"].attr("to")("cuda");
+
+                    locals["x_samples_ddim"] = this->_globals["modelFS"].attr("decode_first_stage")(samples_ddim.attr("__getitem__")(0).attr("unsqueeze")(0));
+                    locals["t"] = eval("(x_samples_ddim + 1.0) / 2.0", this->_globals, locals);
+                    locals["x_sample"] = this->_torch.attr("clamp")(locals["t"], "min"_a = 0.0, "max"_a = 1.0);
+                    locals["t"] = this->_einops.attr("rearrange")(locals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
+                    locals["x_sample"] = eval("255.0 * t", this->_globals, locals);
+
+#ifdef  _DEBUG
+                    const auto img = new PyImage(locals["x_sample"]);
+                    const auto dest = this->_os.attr("path").attr("join")(this->_debug, "dest.png");
+                    img->Save(dest.cast<std::string>());
+#endif
+
+                    *pArray = locals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
+                });
+            }
+        });
+
+        hResult = true;
     }
     catch (py::error_already_set& e)
     {
         OutputDebugStringA(e.what());
-        hResult = false;
+        return false;
+    }
+    catch (std::exception& e)
+    {
+        OutputDebugStringA(e.what());
+        return false;
     }
 
-    return hResult;
+    return true;
 }
 
 bool StableDiffusionProcessor::Dispose()

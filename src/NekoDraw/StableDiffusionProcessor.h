@@ -17,6 +17,7 @@ private:
     // Python objects
     py::object _einops;
     py::object _ldm;
+    py::object _numpy;
     py::object _omegaconf;
     py::object _os;
     py::object _pytorchlightning;
@@ -46,6 +47,6 @@ public:
     bool IsModelsInitialized() const override;
     bool ShuffleSeed() override;
     bool RunText2ImageProcessor(std::string prompt, int width, int height, std::vector<std::vector<std::vector<float>>>* pArray) const override;
-    bool RunImage2ImageProcessor(std::string prompt, std::vector<std::vector<std::vector<float>>> array, std::vector<std::vector<std::vector<float>>>* pArray) const override;
+    bool RunImage2ImageProcessor(std::string prompt, float strength, std::vector<std::vector<std::vector<float>>> array, std::vector<std::vector<std::vector<float>>>* pArray) const override;
     bool Dispose() override;
 };

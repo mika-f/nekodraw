@@ -323,7 +323,7 @@ void InitializePluginFilter(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, 
     }
 }
 
-bool RunImage2ImageProcessor(std::string prompt, const TriglavBitmapObject* pSourceBitmap, const TriglavBitmapObject* pDestinationBitmap)
+bool RunImage2ImageProcessor(std::string prompt, float strength, const TriglavBitmapObject* pSourceBitmap, const TriglavBitmapObject* pDestinationBitmap)
 {
     const auto height = (*pSourceBitmap).getHeight();
     const auto width = (*pSourceBitmap).getWidth();
@@ -335,7 +335,7 @@ bool RunImage2ImageProcessor(std::string prompt, const TriglavBitmapObject* pSou
 
         for (auto j = 0; j < width; j++)
         {
-            const TriglavPlugInPoint point{i, j};
+            const TriglavPlugInPoint point{j, i};
             const auto color = (*pSourceBitmap).getColorFrom(point);
             const auto r = static_cast<float>(std::get<0>(color));
             const auto g = static_cast<float>(std::get<1>(color));
@@ -349,7 +349,7 @@ bool RunImage2ImageProcessor(std::string prompt, const TriglavBitmapObject* pSou
 
     Image pArray;
 
-    if (const auto isSuccess = spProcessor->RunImage2ImageProcessor(prompt, source, &pArray); isSuccess)
+    if (const auto isSuccess = spProcessor->RunImage2ImageProcessor(prompt, strength, source, &pArray); isSuccess)
     {
         if (pArray.empty())
         {
@@ -528,11 +528,11 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
                         TriglavPlugInBitmapObject sourceBitmapObject = nullptr;
                         (*pBitmapService).createProc(&sourceBitmapObject, width, height, 3, kTriglavPlugInBitmapScanlineHorizontalLeftTop);
 
-                        TriglavPlugInPoint offscreenSourcePoint{top, left};
+                        TriglavPlugInPoint offscreenSourcePoint{left, top};
                         const auto pSourceBitmap = TriglavBitmapObject::create(pBitmapService, width, height, channels);
                         (*pSourceBitmap).copyFrom(pOffscreenService, sourceOffscreenObject, &offscreenSourcePoint);
 
-                        const auto isSuccess = RunImage2ImageProcessor(prompt, pSourceBitmap, pDestinationBitmap);
+                        const auto isSuccess = RunImage2ImageProcessor(prompt, pFilterInfo->strength, pSourceBitmap, pDestinationBitmap);
                         (*pSourceBitmap).Release();
 
                         if (!isSuccess)

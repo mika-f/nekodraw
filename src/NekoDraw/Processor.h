@@ -14,7 +14,7 @@ public:
     [[nodiscard]] virtual bool IsModelsInitialized() const = 0;
     [[nodiscard]] virtual bool ShuffleSeed() = 0;
     [[nodiscard]] virtual bool RunText2ImageProcessor(std::string prompt, int width, int height, std::vector<std::vector<std::vector<float>>>* pArray) const = 0;
-    [[nodiscard]] virtual bool RunImage2ImageProcessor(std::string prompt, std::vector<std::vector<std::vector<float>>> array, std::vector<std::vector<std::vector<float>>>* pArray) const = 0;
+    [[nodiscard]] virtual bool RunImage2ImageProcessor(std::string prompt, float strength, std::vector<std::vector<std::vector<float>>> array, std::vector<std::vector<std::vector<float>>>* pArray) const = 0;
     [[nodiscard]] virtual bool Dispose() = 0;
 
     virtual ~Processor()
