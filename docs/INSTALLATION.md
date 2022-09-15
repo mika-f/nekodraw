@@ -9,6 +9,8 @@
 ### ソフトウェア要件
 
 - Windows 10 以上 (古い Windows でも動きますが、サポートしません)
+- [VC++ Runtime 2015-2022](https://docs.microsoft.com/ja-jp/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022)
+  - これについて、後々使用している C++ のバージョンを下げるなどを行い、 CLIP STUDIO PAINT とバージョンを合わせる予定です
 - CLIP STUDIO PAINT EX (EX のみプラグインが使用可能です)
 
 ### ハードウェア要件 (推奨)
@@ -90,6 +92,10 @@ NekoDrawRuntimeUri=C:\Users\natsuneko\Documents\NekoDraw
 
 ダウンロードした Stable Diffusion のモデルデータは、ランタイムの中に設置します。  
 ランタイムのフォルダー以下の、 `models\ldm\stable-diffusion-v1` に、名前を変更せずに設置してください。
+
+### `python310.dll`
+
+ランタイム内に存在する `python310.dll` について、 `NekoDraw.cpm` を設置したところと同じ場所にコピーしてください。
 
 ## 起動
 
