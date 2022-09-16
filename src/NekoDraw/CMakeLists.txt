@@ -1,5 +1,6 @@
-project(NekoDraw)
 cmake_minimum_required(VERSION 3.24)
+
+project(NekoDraw)
 
 set(CMAKE_CXX_STANDARD 20)
 
