@@ -26,73 +26,38 @@
 
 ## ダウンロード
 
-下記から、4 つのファイルをダウンロードしてください。
+下記から、2 つのファイルをダウンロードしてください。
 
 1. NekoDraw プラグイン本体
    1. CLIP STUDIO PAINT 公式ストアから配布されるまでは、個別にお問い合わせください : [@6jz](https://twitter.com.6jz)
-   2. もしくは、自前でビルドすることも可能です
-2. NekoDraw ランタイム
-   1. [Natsuneko Laboratory Archives](https://archive.natsuneko.moe/n/e/NekoDraw/Runtime/NekoDraw-Runtime-v0.1.0.zip) から、最新の `NekoDraw-Runtime-vx.x.x.zip` をダウンロードしてください
-   2. ※数 GB ありますのでご注意ください
-3. NekoDraw 設定構成ファイル
-   1. [GitHub Releases ページ](https://github.com/mika-f/nekodraw/releases/latest)から、最新の `NekoDraw-Conf-vx.x.x.zip` をダウンロードしてください
-4. Stable Diffusion 学習済みモデル
+   2. もしくは、自前で Stable Diffusion が実行可能な Python 環境を用意し、ビルドすることでも可能です
+2. Stable Diffusion 学習済みモデル
    1. [Hugging Face の該当ページ](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original)から、最新の `sd-v1-4.ckpt` をダウンロードしてください
    2. ※数 GB ありますのでご注意ください
 
 ## 解凍
 
 以下のファイルについて、解凍を行ってください。  
-**なお、ランタイム内にある zip ファイル (`python310.zip`) については解凍を行わないでください。**
+**なお、ランタイム内にある zip ファイル (`python310.zip` および `stable-diffusion.zip`) については解凍を行わないでください。**
 
 1. `NekoDraw-Plugin-vx.x.x.zip`
-2. `NekoDraw-Runtime-vx.x.x.zip`
-3. `NekoDraw-Conf-vx.x.x.zip`
 
 ## 配置
 
 各ファイルについて所定の場所に設置します。
 
-### `NekoDraw.cpm`
+### `NekoDraw` フォルダー
 
-`NekoDraw-Plugin-vx.x.x.zip` を解凍した中にあるフォルダー (`NekoDraw`) は、以下の場所に設置してください。
+解凍後にでてくる `NekoDraw` フォルダーは、以下に配置してください。
 
 ```
 %APPDATA%\CELSYSUserData\CELSYS\CLIPStudioModule\PlugIn\PAINT
 ```
 
-エクスプローラーを開いて、アドレスバーにそのまま打ち込むことで移動が可能です。  
-すでに他のプラグインを導入している場合、すでに何らかの `cpm` ファイルやフォルダーが存在していますが、同様に設置してください。
-
-### `NekoDraw`
-
-`NekoDraw-Runtime-vx.x.x.zip` を解凍した中にある `NekoDraw` フォルダーは、任意の場所に設置することが出来ます。  
-ただし、上記プラグインと同じ場所に設置すると、 CLIP STUDIO PAINT の起動時間がとてつもなく長くなるので、出来れば別の場所に設置してください。  
-設置した場所は、この後の構成ファイルの設定にて使用しますので、メモしておいてください。
-
-### `NekoDraw.ini`
-
-`NekoDraw-Conf-vx.x.x.zip` を解凍した中にある `NekoDraw.ini` は、 `NekoDraw.cpm` と同じ場所に設置してください。  
-このとき、中身を編集する必要があります。
-
-```ini
-[NekoDraw]
-NekoDrawRuntimeUri=M:\repos\github.com\mika-f\nekodraw\runtime\NekoDraw
-```
-
-初期値では、上記のように設定されています。  
-このままでは動きませんので、 `=` より後ろの文字列を、先ほどランタイムを置いた場所に修正してください。  
-例えば、 `NekoDraw` フォルダーを `C:\Users\natsuneko\Documents` に設置した場合は、以下のように設定します。
-
-```ini
-[NekoDraw]
-NekoDrawRuntimeUri=C:\Users\natsuneko\Documents\NekoDraw
-```
-
 ### `sd-v1-4.ckpt`
 
 ダウンロードした Stable Diffusion のモデルデータは、ランタイムの中に設置します。  
-ランタイムのフォルダー以下の、 `models\ldm\stable-diffusion-v1` に、名前を変更せずに設置してください。
+`NekoDraw` のフォルダー以下の、 `models\ldm\stable-diffusion-v1` に、名前を変更せずに設置してください。
 
 ## 起動
 
@@ -102,4 +67,10 @@ NekoDrawRuntimeUri=C:\Users\natsuneko\Documents\NekoDraw
 ## 不明点について
 
 不明点などがありましたら、 Twitter アカウント [@6jz](https://twitter.com/6jz) までご連絡ください。
-サポートについては GitHub アカウントをお持ちの方は Issue もしくは PR にて、その他の方は上記 Twitter までご連絡ください。
+
+## サポートについて
+
+サポートについては GitHub アカウントをお持ちの方は Issue もしくは PR にて、その他の方は上記 Twitter までご連絡ください。  
+専用ではないですが、創作 Discord もありますので、こちらでも受け付け可能です。
+
+https://discord.gg/vpjhenyT29 (#nekodraw channel)
