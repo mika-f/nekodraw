@@ -13,6 +13,7 @@ private:
     std::string _debug;
     bool _isBackendInitialized;
     bool _isModelsInitialized;
+    int _seed;
 
     // Python objects
     py::object _einops;
@@ -21,7 +22,6 @@ private:
     py::object _omegaconf;
     py::object _os;
     py::object _pytorchlightning;
-    py::object _random;
     py::object _sys;
     py::object _torch;
 

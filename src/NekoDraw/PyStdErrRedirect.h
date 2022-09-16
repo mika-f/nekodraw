@@ -4,7 +4,6 @@
 
 namespace py = pybind11;
 
-
 class PyStdErrRedirect
 {
 private:

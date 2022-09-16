@@ -10,6 +10,7 @@
 // add headers that you want to pre-compile here
 #include <codecvt>
 #include <filesystem>
+#include <random>
 #include <string>
 #include <numeric>
 #include <tuple>

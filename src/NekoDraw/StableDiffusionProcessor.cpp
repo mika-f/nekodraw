@@ -222,8 +222,13 @@ bool StableDiffusionProcessor::ShuffleSeed()
 {
     try
     {
-        this->_globals["seed"] = this->_random.attr("randint")(0, 1000000);
-        this->_pytorchlightning.attr("seed_everything")(this->_globals["seed"]);
+        std::random_device rnd;
+        std::mt19937 mt(rnd());
+        std::uniform_int_distribution rand(0, 1000000);
+
+        this->_seed = rand(mt);
+
+        this->_pytorchlightning.attr("seed_everything")(this->_seed);
 
         return true;
     }
@@ -303,7 +308,7 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
                         "S"_a = 50,
                         "conditioning"_a = c,
                         "batch_size"_a = 1,
-                        "seed"_a = this->_globals["seed"],
+                        "seed"_a = this->_seed,
                         "shape"_a = shape,
                         "verbose"_a = false,
                         "unconditional_guidance_scale"_a = 7.5,
@@ -466,7 +471,7 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
                     const auto z_enc = this->_globals["model"].attr("stochastic_encode")(
                         locals["init_latent"],
                         this->_torch.attr("tensor")(eval("[t_enc] * 1", this->_globals, locals)).attr("to")("cuda"),
-                        this->_globals["seed"],
+                        this->_seed,
                         0.0,
                         50
                     );
