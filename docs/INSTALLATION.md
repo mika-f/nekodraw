@@ -29,7 +29,8 @@
 下記から、4 つのファイルをダウンロードしてください。
 
 1. NekoDraw プラグイン本体
-   1. [GitHub Releases ページ](https://github.com/mika-f/nekodraw/releases/latest)から、最新の `NekoDraw-Plugin-vx.x.x.zip` をダウンロードしてください
+   1. CLIP STUDIO PAINT 公式ストアから配布されるまでは、個別にお問い合わせください : [@6jz](https://twitter.com.6jz)
+   2. もしくは、自前でビルドすることも可能です
 2. NekoDraw ランタイム
    1. [Natsuneko Laboratory Archives](https://archive.natsuneko.moe/n/e/NekoDraw/Runtime/NekoDraw-Runtime-v0.1.0.zip) から、最新の `NekoDraw-Runtime-vx.x.x.zip` をダウンロードしてください
    2. ※数 GB ありますのでご注意ください
@@ -54,14 +55,14 @@
 
 ### `NekoDraw.cpm`
 
-`NekoDraw-Plugin-vx.x.x.zip` を解凍した中にある `NekoDraw.cpm` は、以下の場所に設置してください。
+`NekoDraw-Plugin-vx.x.x.zip` を解凍した中にあるフォルダー (`NekoDraw`) は、以下の場所に設置してください。
 
 ```
 %APPDATA%\CELSYSUserData\CELSYS\CLIPStudioModule\PlugIn\PAINT
 ```
 
 エクスプローラーを開いて、アドレスバーにそのまま打ち込むことで移動が可能です。  
-すでに他のプラグインを導入している場合、すでに何らかの `cpm` ファイルが存在していますが、同様に設置してください。
+すでに他のプラグインを導入している場合、すでに何らかの `cpm` ファイルやフォルダーが存在していますが、同様に設置してください。
 
 ### `NekoDraw`
 
@@ -92,10 +93,6 @@ NekoDrawRuntimeUri=C:\Users\natsuneko\Documents\NekoDraw
 
 ダウンロードした Stable Diffusion のモデルデータは、ランタイムの中に設置します。  
 ランタイムのフォルダー以下の、 `models\ldm\stable-diffusion-v1` に、名前を変更せずに設置してください。
-
-### `python310.dll`
-
-ランタイム内に存在する `python310.dll` について、 `NekoDraw.cpm` を設置したところと同じ場所にコピーしてください。
 
 ## 起動
 
