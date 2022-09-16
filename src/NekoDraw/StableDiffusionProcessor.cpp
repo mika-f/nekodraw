@@ -109,7 +109,6 @@ bool StableDiffusionProcessor::InitializeBackend()
         this->_numpy = py::module::import("numpy");
         this->_omegaconf = py::module::import("omegaconf");
         this->_pytorchlightning = py::module::import("pytorch_lightning");
-        this->_random = py::module::import("random");
         this->_torch = py::module::import("torch");
 
         this->_isBackendInitialized = true;
