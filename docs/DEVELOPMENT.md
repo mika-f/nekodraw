@@ -9,11 +9,14 @@
 ### ソフトウェア要件
 
 - Windows 10 以上
-- [VC++ Runtime 2015-2022](https://docs.microsoft.com/ja-jp/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022)
-  - これについて、後々使用している C++ のバージョンを下げるなどを行い、 CLIP STUDIO PAINT とバージョンを合わせる予定です
-- CLIP STUDIO PAINT EX (EX のみプラグインが使用可能です)
-- CLIP STUDIO PAINT SDK
-- cmake
+- 開発ツール
+  - Visual Studio 2022
+  - [VC++ Runtime 2015-2022](https://docs.microsoft.com/ja-jp/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022)
+    - これについて、後々使用している C++ のバージョンを下げるなどを行い、 CLIP STUDIO PAINT とバージョンを合わせる予定です
+  - cmake
+- CLIP STUDIO PAINT
+  - CLIP STUDIO PAINT EX (EX のみプラグインが使用可能です)
+  - CLIP STUDIO PAINT SDK
 
 ### ハードウェア要件 (推奨)
 
@@ -39,8 +42,8 @@
 
 ## コード編集
 
-`src/NekoDraw/NekoDraw.sln` を開くことで編集が可能です。
+`src/NekoDraw` で `cmake CMakeLists.txt` したあと、 `build` に生えた `NekoDraw.sln` を開いて編集してください。
 
 ## ビルド
 
-なんか VS 標準生成のだとうまくいかないので、 `src/NekoDraw` で `cmake CMakeLists.txt` したあと、 `build` に生えたソリューションをビルドしてください。
+`src/NekoDraw` で `cmake CMakeLists.txt` したあと、 `build` に生えたソリューションをビルドしてください。
