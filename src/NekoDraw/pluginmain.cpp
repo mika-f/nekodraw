@@ -77,7 +77,7 @@ void SetPropertyValueIfChanged(TriglavPlugInInt* pResult, float* ref, const Trig
     TriglavPlugInDouble newValueFloatObject;
     (*pPropertyService).getDecimalValueProc(&newValueFloatObject, propertyObject, itemKey);
 
-    const float newValueFloat = static_cast<float>(newValueFloatObject);
+    const auto newValueFloat = static_cast<float>(newValueFloatObject);
 
     if (*ref != newValueFloat)
     {
@@ -179,21 +179,11 @@ wchar_t* AsWcharT(const std::string str)
 
 void SetRuntimePaths()
 {
-    const auto path = std::filesystem::path(PluginRootDirectory) / "NekoDraw.ini";
-    constexpr TCHAR runtime[MAX_PATH] = {};
-    GetPrivateProfileString(
-        L"NekoDraw",
-        L"NekoDrawRuntimeUri",
-        L"",
-        LPWSTR(runtime),
-        MAX_PATH,
-        AsWcharT(path.string())
-    );
+    const auto root = AsWcharT(PluginRootDirectory);
 
-    const auto wr = (wchar_t*)runtime;
-    RuntimePath = GetRuntimePath(wr);
-    LibraryPath = GetLibraryPath(wr);
-    RootPath = GetRootPath(wr);
+    RuntimePath = GetRuntimePath(root);
+    LibraryPath = GetLibraryPath(root);
+    RootPath = GetRootPath(root);
 }
 
 void InitializePluginModule(TriglavPlugInInt* pResult, TriglavPlugInPtr* pData, const TriglavPlugInServer* pPluginServer)
@@ -554,6 +544,12 @@ void RunPluginFilter(TriglavPlugInInt* pResult, const TriglavPlugInPtr* pData, c
 
                     (*pProgress).SetDone();
                     *pResult = kTriglavPlugInCallResultSuccess;
+                }
+                catch (pybind11::error_already_set& e)
+                {
+                    MessageBoxA(nullptr, e.what(), "", 0);
+                    *pResult = kTriglavPlugInCallResultFailed;
+                    break;
                 }
                 catch (std::exception& e)
                 {

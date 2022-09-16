@@ -90,13 +90,17 @@ bool StableDiffusionProcessor::InitializeBackend()
         // Maybe Python.lib ignores PYTHON_HOME environment variables in Debug build.
         this->_sys.attr("path").attr("insert")(0, "");
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "python310.zip"));
+        this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "stable-diffusion.zip"));
+        this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "site-packages"));
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root));
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "DLLs"));
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "lib"));
 
 #endif
 
-        this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "lib", "site-packages"));
+        this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "python310.zip"));
+        this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "stable-diffusion.zip"));
+        this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "site-packages"));
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "src", "taming-transformers"));
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "src", "clip"));
 
