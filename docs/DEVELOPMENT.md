@@ -34,8 +34,30 @@
 
 ## コード編集
 
-`src/NekoDraw` で `cmake CMakeLists.txt` したあと、 `build` に生えた `NekoDraw.sln` を開いて編集してください。
+```bash
+$ cmake -S ./src/NekoDraw -B ./build
+```
+
+したあと、 `build/NekoDraw.sln` を開きます。
 
 ## ビルド
 
-`src/NekoDraw` で `cmake CMakeLists.txt` したあと、 `build` に生えたソリューションをビルドしてください。
+```bash
+$ cmake -S ./src/NekoDraw -B ./build
+```
+
+したあと、 `build/NekoDraw.sln` をビルドします。
+
+## オプション
+
+以下のコンパイルオプションが利用可能です。
+
+- `FORCE_16BIT_FLOAT=(ON|OFF)`
+  - VRAM のサイズにかかわらず、強制的に半精度のモデルを使用します
+  - デフォルトは OFF で、 10GB より少ないメモリの場合のみ半精度のモデルを使用します
+
+実行例：
+
+```bash
+$ cmake -S ./src/NekoDraw -B ./build -DFORCE_16BIT_FLOAT=ON
+```

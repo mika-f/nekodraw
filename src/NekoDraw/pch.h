@@ -18,6 +18,7 @@
 
 #include "TriglavPlugInSDK.h"
 
+#include "config.h"
 #include "data.h"
 #include "framework.h"
 

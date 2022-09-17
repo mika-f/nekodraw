@@ -35,13 +35,21 @@ set(HEADER
   TriglavProgress.h
 )
 
+set(CONFIG
+  ../../build/config.h
+)
+
+option(FORCE_16BIT_FLOAT "Enforce to use 16-bit models" OFF)
+
 add_subdirectory(extern/pybind11)
 add_definitions(-D_UNICODE -DUNICODE)
 
 # find_package(pybind11 REQUIRED)
-add_library(NekoDraw SHARED ${SOURCE} ${HEADER})
+add_library(NekoDraw SHARED ${SOURCE} ${HEADER} ${CONFIG})
+configure_file("${PROJECT_SOURCE_DIR}/config.h.in" "${PROJECT_BINARY_DIR}/config.h")
 
 target_include_directories(NekoDraw PRIVATE extern/TriglavPlugInSDK)
+target_include_directories(NekoDraw PRIVATE ${PROJECT_BINARY_DIR})
 target_link_libraries(NekoDraw PRIVATE pybind11::embed)
 target_sources(NekoDraw PRIVATE NekoDraw.rc)
 target_precompile_headers(NekoDraw PRIVATE pch.h)

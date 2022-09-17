@@ -1,0 +1,3 @@
+#pragma once
+
+#cmakedefine FORCE_16BIT_FLOAT
