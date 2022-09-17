@@ -15,10 +15,7 @@
 
 ### ハードウェア要件 (推奨)
 
-- 32GB 以上のメモリ
-  - 手元の PC では、 512x512px の画像 (img2img) にて、 ~19GB のメモリを消費しています
-- GeForce RTX 3060 もしくは VRAM か 8GB 以上のビデオカード (NVIDIA 製)
-  - 手元の PC では、 512x512px の画像 (img2img) にて、 ~3GB のメモリを消費しています
+[REQUIREMENTS-HARDWARE](./REQUIREMENTS-HARDWARE.md) を参照ください。
 
 ### 心構え
 
