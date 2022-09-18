@@ -39,7 +39,7 @@ set(CONFIG
   ../../build/config.h
 )
 
-option(FORCE_16BIT_FLOAT "Enforce to use 16-bit models" OFF)
+option(WITH_FORCE_F16_PRECISION "Enforce to use 16-bit models" ON)
 
 add_subdirectory(extern/pybind11)
 add_definitions(-D_UNICODE -DUNICODE)
