@@ -88,9 +88,6 @@ bool StableDiffusionProcessor::InitializeBackend()
 
         // Debug build of NekoDraw does not including paths of self container(s).
         // Maybe Python.lib ignores PYTHON_HOME environment variables in Debug build.
-
-        py::print(_sys.attr("path"));
-
         this->_sys.attr("path").attr("insert")(0, "");
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "python310.zip"));
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "stable-diffusion.zip"));
