@@ -117,7 +117,7 @@ bool StableDiffusionProcessor::InitializeBackend()
         // check running environment is GTX 16xx?
         // if running on GTX 16xx, enforce to use full precision because floating points calculation bug in stable diffusion.
         // maybe buggy on A4000, and others????
-        const auto name = this->_torch.attr("cuda").attr("get_device_name")().cast<std::string>();
+        const auto name = this->_torch.attr("cuda").attr("get_device_name")(0).cast<std::string>();
         if (name.starts_with("GeForce GTX 16") || name.starts_with("RTX A4000"))
         {
             this->_isEnforceUseNonHalfModels = true;
