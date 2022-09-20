@@ -426,7 +426,7 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
 
         locals["prompt"] = prompt;
         locals["data"] = std::vector{py::int_(1) * eval("[prompt]", this->_globals, locals)};
-        this->_globals["precision_scope"] = this->_isEnforceUseNonHalfModels ? this->_contextlib.attr("nullcontext") : this->_torch.attr("autocast");
+        locals["precision_scope"] = this->_isEnforceUseNonHalfModels ? this->_contextlib.attr("nullcontext") : this->_torch.attr("autocast");
 
         this->_globals["modelFS"].attr("to")("cuda");
         locals["init_image"] = locals["init_image"].attr("to")("cuda");
