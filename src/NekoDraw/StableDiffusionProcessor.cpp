@@ -502,12 +502,7 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
                     locals["t"] = this->_einops.attr("rearrange")(locals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
                     locals["x_sample"] = eval("255.0 * t", this->_globals, locals);
 
-<<<<<<< Updated upstream
-#ifdef  _DEBUG
-=======
-
 #ifdef _DEBUG
->>>>>>> Stashed changes
                     const auto img = new PyImage(locals["x_sample"]);
                     const auto dest = this->_os.attr("path").attr("join")(this->_debug, "dest.png");
                     img->Save(dest.cast<std::string>());
