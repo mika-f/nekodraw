@@ -19,6 +19,7 @@ private:
     // Python objects
     py::object _contextlib;
     py::object _einops;
+    py::object _gc;
     py::object _ldm;
     py::object _numpy;
     py::object _omegaconf;

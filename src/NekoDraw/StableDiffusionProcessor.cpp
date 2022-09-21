@@ -106,6 +106,7 @@ bool StableDiffusionProcessor::InitializeBackend()
 
         this->_contextlib = py::module::import("contextlib");
         this->_einops = py::module::import("einops");
+        this->_gc = py::module::import("gc");
         this->_ldm = py::module::import("ldm.util");
         this->_numpy = py::module::import("numpy");
         this->_omegaconf = py::module::import("omegaconf");
@@ -276,12 +277,13 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
             {
                 with(this->_globals["precision_scope"]("cuda"), [this, prompts, newWidth, newHeight, pArray]
                 {
+                    const auto locals = py::dict();
+
                     this->_globals["modelCS"].attr("to")("cuda");
-                    py::object uc;
 
                     if constexpr (true)
                     {
-                        uc = this->_globals["modelCS"].attr("get_learned_conditioning")(py::eval("1 * [\"\"]"));
+                        locals["uc"] = this->_globals["modelCS"].attr("get_learned_conditioning")(py::eval("1 * [\"\"]"));
                     }
 
                     const auto tuple = py::tuple();
@@ -300,22 +302,21 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
 
                     SplitWeightedSubPrompts(prompts[0], &subPrompts, &weights);
 
-                    py::object c;
                     if (subPrompts.size() > 1)
                     {
-                        c = this->_torch.attr("zeros_like")(uc);
+                        locals["c"] = this->_torch.attr("zeros_like")(locals["uc"]);
 
                         const auto totalWeight = std::accumulate(weights.begin(), weights.end(), 0.0f);
 
                         for (auto i = 0; i < subPrompts.size(); i++)
                         {
                             const auto weight = weights[i] / totalWeight;
-                            c = this->_torch.attr("add")(c, this->_globals["modelCS"].attr("get_learned_conditioning")(subPrompts[i]), "alpha"_a = weight);
+                            locals["c"] = this->_torch.attr("add")(locals["c"], this->_globals["modelCS"].attr("get_learned_conditioning")(subPrompts[i]), "alpha"_a = weight);
                         }
                     }
                     else
                     {
-                        c = this->_globals["modelCS"].attr("get_learned_conditioning")(prompts);
+                        locals["c"] = this->_globals["modelCS"].attr("get_learned_conditioning")(prompts);
                     }
 
                     const auto shape = std::vector{4, static_cast<int>(floor(newHeight / 8)), static_cast<int>(floor(newWidth / 8))};
@@ -327,20 +328,19 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
 
                     const auto samples_ddim = this->_globals["model"].attr("sample")(
                         "S"_a = 50,
-                        "conditioning"_a = c,
+                        "conditioning"_a = locals["c"],
                         "batch_size"_a = 1,
                         "seed"_a = this->_seed,
                         "shape"_a = shape,
                         "verbose"_a = false,
                         "unconditional_guidance_scale"_a = 7.5,
-                        "unconditional_conditioning"_a = uc,
+                        "unconditional_conditioning"_a = locals["uc"],
                         "eta"_a = 0.0,
                         "x_T"_a = nullptr
                     );
 
                     this->_globals["modelFS"].attr("to")("cuda");
 
-                    const auto locals = py::dict();
                     const auto x_samples_ddim = this->_globals["modelFS"].attr("decode_first_stage")(samples_ddim.attr("__getitem__")(0).attr("unsqueeze")(0));
                     locals["x_samples_ddim"] = x_samples_ddim;
                     locals["t"] = eval("(x_samples_ddim + 1.0) / 2.0", this->_globals, locals);
@@ -355,9 +355,20 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
 #endif
 
                     *pArray = locals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
+
+                    exec("del x_samples_ddim", this->_globals, locals);
+                    exec("del t", this->_globals, locals);
+                    exec("del x_sample", this->_globals, locals);
+                    exec("del uc", this->_globals, locals);
+                    exec("del c", this->_globals, locals);
+
+                    this->_globals["modelFS"].attr("to")("cpu");
                 });
             }
         });
+
+        this->_gc.attr("collect")();
+        this->_torch.attr("cuda").attr("empty_cache")();
     }
     catch (py::error_already_set& e)
     {
@@ -375,8 +386,6 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
 
 bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float strength, Image array, Image* pArray) const
 {
-    bool hResult = false;
-
     try
     {
         const auto locals = py::dict();
@@ -450,11 +459,10 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
                 with(locals["precision_scope"]("cuda"), [this, locals, prompts, pArray]
                 {
                     this->_globals["modelCS"].attr("to")("cuda");
-                    py::object uc;
 
                     if constexpr (true)
                     {
-                        uc = this->_globals["modelCS"].attr("get_learned_conditioning")(py::eval("1 * [\"\"]"));
+                        locals["uc"] = this->_globals["modelCS"].attr("get_learned_conditioning")(py::eval("1 * [\"\"]"));
                     }
 
                     const auto tuple = py::tuple();
@@ -473,22 +481,21 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
 
                     SplitWeightedSubPrompts(prompts[0], &subPrompts, &weights);
 
-                    py::object c;
                     if (subPrompts.size() > 1)
                     {
-                        c = this->_torch.attr("zeros_like")(uc);
+                        locals["c"] = this->_torch.attr("zeros_like")(locals["uc"]);
 
                         const auto totalWeight = std::accumulate(weights.begin(), weights.end(), 0.0f);
 
                         for (auto i = 0; i < subPrompts.size(); i++)
                         {
                             const auto weight = weights[i] / totalWeight;
-                            c = this->_torch.attr("add")(c, this->_globals["modelCS"].attr("get_learned_conditioning")(subPrompts[i]), "alpha"_a = weight);
+                            locals["c"] = this->_torch.attr("add")(locals["c"], this->_globals["modelCS"].attr("get_learned_conditioning")(subPrompts[i]), "alpha"_a = weight);
                         }
                     }
                     else
                     {
-                        c = this->_globals["modelCS"].attr("get_learned_conditioning")(prompts);
+                        locals["c"] = this->_globals["modelCS"].attr("get_learned_conditioning")(prompts);
                     }
 
                     const auto mem = this->_torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001;
@@ -497,7 +504,7 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
                     while (this->_torch.attr("cuda").attr("memory_allocated")().cast<double>() / 0.000001 >= mem)
                         Sleep(1000);
 
-                    const auto z_enc = this->_globals["model"].attr("stochastic_encode")(
+                    locals["z_enc"] = this->_globals["model"].attr("stochastic_encode")(
                         locals["init_latent"],
                         this->_torch.attr("tensor")(eval("[t_enc] * 1", this->_globals, locals)).attr("to")("cuda"),
                         this->_seed,
@@ -506,11 +513,11 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
                     );
 
                     const auto samples_ddim = this->_globals["model"].attr("decode")(
-                        z_enc,
-                        c,
+                        locals["z_enc"],
+                        locals["c"],
                         locals["t_enc"],
                         "unconditional_guidance_scale"_a = 7.5,
-                        "unconditional_conditioning"_a = uc
+                        "unconditional_conditioning"_a = locals["uc"]
                     );
 
                     this->_globals["modelFS"].attr("to")("cuda");
@@ -528,11 +535,24 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
 #endif
 
                     *pArray = locals["x_sample"].cast<std::vector<std::vector<std::vector<float>>>>();
+
+                    exec("del x_samples_ddim", this->_globals, locals);
+                    exec("del t", this->_globals, locals);
+                    exec("del x_sample", this->_globals, locals);
+                    exec("del init_image", this->_globals, locals);
+                    exec("del init_latent", this->_globals, locals);
+                    exec("del z_enc", this->_globals, locals);
+                    exec("del image", this->_globals, locals);
+                    exec("del c", this->_globals, locals);
+                    exec("del uc", this->_globals, locals);
+
+                    this->_globals["modelFS"].attr("to")("cpu");
                 });
             }
         });
 
-        hResult = true;
+        this->_gc.attr("collect")();
+        this->_torch.attr("cuda").attr("empty_cache")();
     }
     catch (py::error_already_set& e)
     {
