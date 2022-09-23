@@ -11,6 +11,7 @@
 #include <codecvt>
 #include <filesystem>
 #include <random>
+#include <regex>
 #include <string>
 #include <numeric>
 #include <tuple>
