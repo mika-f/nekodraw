@@ -104,6 +104,7 @@ bool StableDiffusionProcessor::InitializeBackend()
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "src", "taming-transformers"));
         this->_sys.attr("path").attr("insert")(0, this->_os.attr("path").attr("join")(this->_root, "src", "clip"));
 
+        this->_contextlib = py::module::import("contextlib");
         this->_einops = py::module::import("einops");
         this->_gc = py::module::import("gc");
         this->_ldm = py::module::import("ldm.util");
@@ -113,6 +114,16 @@ bool StableDiffusionProcessor::InitializeBackend()
         this->_torch = py::module::import("torch");
 
         this->_isBackendInitialized = true;
+
+        // check running environment is GTX 16xx?
+        // if running on GTX 16xx, enforce to use full precision because floating points calculation bug in stable diffusion.
+        // maybe buggy on A4000, and others????
+        const auto name = this->_torch.attr("cuda").attr("get_device_name")(0).cast<std::string>();
+        if (const std::regex re(R"(GTX 16\d+|RTX A4000)"); std::regex_match(name, re))
+        {
+            this->_isEnforceUseNonHalfModels = true;
+        }
+
         return true;
     }
     catch (py::error_already_set& e)
@@ -133,6 +144,7 @@ bool StableDiffusionProcessor::InitializeModels(std::string ckpt)
     {
         const auto path = this->_os.attr("path").attr("join")(this->_root, ckpt);
         const auto sd = py::object(this->_torch.attr("load")(path, "map_location"_a = "cpu")["state_dict"]);
+
         const auto li = py::list();
         const auto lo = py::list();
 
@@ -193,10 +205,16 @@ bool StableDiffusionProcessor::InitializeModels(std::string ckpt)
         modelFS.attr("load_state_dict")(sd, "strict"_a = false);
         modelFS.attr("eval")();
 
-        // 
-        model.attr("half")();
-        modelCS.attr("half")();
-        modelFS.attr("half")();
+        if (this->_isEnforceUseNonHalfModels)
+        {
+            // noop
+        }
+        else
+        {
+            model.attr("half")();
+            modelCS.attr("half")();
+            modelFS.attr("half")();
+        }
 
         this->_globals["model"] = model;
         this->_globals["modelCS"] = modelCS;
@@ -251,7 +269,7 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
 
         this->_globals["prompt"] = prompt;
         this->_globals["data"] = std::vector{py::int_(1) * eval("[prompt]", this->_globals)};
-        this->_globals["precision_scope"] = this->_torch.attr("autocast");
+        this->_globals["precision_scope"] = this->_isEnforceUseNonHalfModels ? this->_contextlib.attr("nullcontext") : this->_torch.attr("autocast");
 
         with(this->_torch.attr("no_grad")(), [this, newWidth, newHeight, pArray]
         {
@@ -330,7 +348,7 @@ bool StableDiffusionProcessor::RunText2ImageProcessor(std::string prompt, int wi
                     locals["t"] = this->_einops.attr("rearrange")(locals["x_sample"].attr("__getitem__")(0).attr("cpu")().attr("numpy")(), "c h w -> h w c");
                     locals["x_sample"] = eval("255.0 * t", this->_globals, locals);
 
-#ifdef  _DEBUG
+#ifdef _DEBUG
                     const auto img = new PyImage(locals["x_sample"]);
                     const auto dest = this->_os.attr("path").attr("join")(this->_debug, "dest.png");
                     img->Save(dest.cast<std::string>());
@@ -405,11 +423,19 @@ bool StableDiffusionProcessor::RunImage2ImageProcessor(std::string prompt, float
         locals["image"] = this->_torch.attr("from_numpy")(locals["image"]);
 
         locals["init_image"] = eval("2.0 * image - 1.0", this->_globals, locals);
-        locals["init_image"] = locals["init_image"].attr("half")();
+
+        if (this->_isEnforceUseNonHalfModels)
+        {
+            // noop
+        }
+        else
+        {
+            locals["init_image"] = locals["init_image"].attr("half")();
+        }
 
         locals["prompt"] = prompt;
         locals["data"] = std::vector{py::int_(1) * eval("[prompt]", this->_globals, locals)};
-        locals["precision_scope"] = this->_torch.attr("autocast");
+        locals["precision_scope"] = this->_isEnforceUseNonHalfModels ? this->_contextlib.attr("nullcontext") : this->_torch.attr("autocast");
 
         this->_globals["modelFS"].attr("to")("cuda");
         locals["init_image"] = locals["init_image"].attr("to")("cuda");

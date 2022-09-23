@@ -14,8 +14,10 @@ private:
     bool _isBackendInitialized;
     bool _isModelsInitialized;
     int _seed;
+    bool _isEnforceUseNonHalfModels;
 
     // Python objects
+    py::object _contextlib;
     py::object _einops;
     py::object _gc;
     py::object _ldm;
@@ -35,12 +37,11 @@ public:
         this->_debug = std::move(debug);
         this->_isBackendInitialized = false;
         this->_isModelsInitialized = false;
+        this->_seed = 0;
+        this->_isEnforceUseNonHalfModels = false;
     }
 
-    ~StableDiffusionProcessor() override
-    {
-        //
-    }
+    ~StableDiffusionProcessor() override = default;
 
     bool InitializeBackend() override;
     bool IsBackendInitialized() const override;
