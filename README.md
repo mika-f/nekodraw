@@ -1,5 +1,7 @@
 # NekoDraw: CLIP STUDIO PAINT Filter Plugin
 
+![](https://user-images.githubusercontent.com/10832834/235712973-cb5b32a6-ad2d-4beb-8aa3-575d20566c87.png)
+
 [English](./README.md) | [日本語](./README.ja.md)
 
 > THIS PROJECT IS EXPERIMENTAL. USE IT AT YOUR OWN RISK.
