@@ -1,3 +1,0 @@
-# TriglavPlugInSDK Directory
-
-CLIP STUDIO PAINT SDK DIRECTORY

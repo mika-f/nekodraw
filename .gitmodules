@@ -1,4 +1,3 @@
-[submodule "src/extern/pybind11"]
-	path = src/NekoDraw/extern/pybind11
+[submodule "extern/pybind11"]
+	path = extern/pybind11
 	url = https://github.com/pybind/pybind11
-	branch = stable
