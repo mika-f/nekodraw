@@ -353,4 +353,4 @@ MigrationBackup/
 build/
 
 # Cache
-src/NekoDraw/CMakeCache.txt
+CMakeCache.txt
